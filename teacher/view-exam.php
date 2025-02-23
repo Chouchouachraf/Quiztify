@@ -5,51 +5,54 @@ checkRole('teacher');
 $examId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $conn = getDBConnection();
 
-try {
-    // Get exam details
-    $stmt = $conn->prepare("
-        SELECT e.*, 
-               COUNT(DISTINCT q.id) as total_questions,
-               COUNT(DISTINCT ea.id) as total_attempts,
-               AVG(ea.score) as average_score
-        FROM exams e
-        LEFT JOIN questions q ON e.id = q.exam_id
-        LEFT JOIN exam_attempts ea ON e.id = ea.exam_id
-        WHERE e.id = ? AND e.created_by = ?
-        GROUP BY e.id
-    ");
-    $stmt->execute([$examId, $_SESSION['user_id']]);
-    $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+// Get exam details
+$stmt = $conn->prepare("
+    SELECT e.*, 
+           COUNT(DISTINCT q.id) as total_questions
+    FROM exams e
+    LEFT JOIN questions q ON e.id = q.exam_id
+    WHERE e.id = ? AND e.created_by = ?
+    GROUP BY e.id
+");
+$stmt->execute([$examId, $_SESSION['user_id']]);
+$exam = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$exam) {
-        setFlashMessage('error', 'Exam not found or access denied.');
-        header('Location: dashboard.php');
-        exit;
-    }
-
-    // Get all attempts for this exam
-    $stmt = $conn->prepare("
-        SELECT 
-            ea.*,
-            u.full_name as student_name,
-            u.email as student_email,
-            COUNT(DISTINCT sa.id) as questions_answered
-        FROM exam_attempts ea
-        JOIN users u ON ea.student_id = u.id
-        LEFT JOIN student_answers sa ON ea.id = sa.attempt_id
-        WHERE ea.exam_id = ?
-        GROUP BY ea.id
-        ORDER BY ea.end_time DESC
-    ");
-    $stmt->execute([$examId]);
-    $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (PDOException $e) {
-    error_log("Error in view-exam.php: " . $e->getMessage());
-    setFlashMessage('error', 'An error occurred while loading exam data.');
-    header('Location: dashboard.php');
+if (!$exam) {
+    setFlashMessage('error', 'Exam not found or access denied.');
+    header('Location: manage-exams.php');
     exit;
 }
+
+// Get all completed attempts with student info
+$sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
+$order = isset($_GET['order']) ? $_GET['order'] : 'asc';
+
+$orderBy = match($sort) {
+    'score' => "ea.score " . ($order === 'asc' ? 'ASC' : 'DESC'),
+    'date' => "ea.end_time " . ($order === 'asc' ? 'ASC' : 'DESC'),
+    'name' => "u.full_name " . ($order === 'asc' ? 'ASC' : 'DESC'),
+    default => "u.full_name ASC"
+};
+
+$stmt = $conn->prepare("
+    SELECT 
+        ea.id as attempt_id,
+        ea.score,
+        ea.end_time,
+        u.full_name,
+        c.name as classroom_name,
+        COUNT(DISTINCT sa.id) as questions_answered
+    FROM exam_attempts ea
+    JOIN users u ON ea.student_id = u.id
+    JOIN classroom_students cs ON u.id = cs.student_id
+    JOIN classrooms c ON cs.classroom_id = c.id
+    LEFT JOIN student_answers sa ON ea.id = sa.attempt_id
+    WHERE ea.exam_id = ? AND ea.is_completed = 1
+    GROUP BY ea.id
+    ORDER BY " . $orderBy
+);
+$stmt->execute([$examId]);
+$attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -57,9 +60,18 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Exam Results - <?php echo htmlspecialchars($exam['title']); ?></title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>Exam Results - <?php echo htmlspecialchars($exam['title']); ?></title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #9b59b6;
+            --light-color: #ecf0f1;
+            --text-dark: #2c3e50;
+            --text-light: #95a5a6;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -70,130 +82,124 @@ try {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             background-color: #f5f6fa;
-            color: #2c3e50;
-            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
-        }
-
-        .exam-header {
-            background: white;
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
 
-        .exam-title {
-            font-size: 24px;
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-
-        .exam-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .stat-card {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #3498db;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-        }
-
-        .attempts-table {
-            width: 100%;
+        .header {
             background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-top: 20px;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: var(--text-dark);
+            margin-bottom: 15px;
+            font-size: 2em;
+        }
+
+        .exam-info {
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .students-list {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
 
-        .attempts-table table {
-            width: 100%;
-            border-collapse: collapse;
+        .student-item {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid var(--light-color);
+            transition: background-color 0.2s ease;
         }
 
-        .attempts-table th,
-        .attempts-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
+        .student-item:hover {
+            background-color: #f8f9fa;
         }
 
-        .attempts-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #2c3e50;
+        .student-info {
+            flex: 1;
         }
 
-        .attempts-table tr:hover {
-            background: #f8f9fa;
-        }
-
-        .score-badge {
-            padding: 5px 10px;
-            border-radius: 15px;
+        .student-name {
+            color: var(--text-dark);
+            font-size: 1.1em;
             font-weight: 500;
-            font-size: 14px;
+            margin-bottom: 4px;
         }
 
-        .score-pass {
-            background: #d4edda;
-            color: #155724;
+        .student-class {
+            color: var(--text-light);
+            font-size: 0.9em;
         }
 
-        .score-fail {
-            background: #f8d7da;
-            color: #721c24;
+        .submission-date {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
-        .btn-view {
-            display: inline-block;
-            padding: 6px 12px;
-            background: #3498db;
-            color: white;
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
             text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
+            color: white;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: opacity 0.2s ease;
         }
 
-        .btn-view:hover {
-            background: #2980b9;
+        .btn:hover {
+            opacity: 0.9;
         }
 
-        .no-attempts {
+        .btn-primary {
+            background: var(--accent-color);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+        }
+
+        .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 15px;
+            margin-top: 30px;
         }
 
-        @media (max-width: 768px) {
-            .exam-stats {
-                grid-template-columns: 1fr;
-            }
+        .empty-state i {
+            font-size: 64px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
 
-            .attempts-table {
-                overflow-x: auto;
-            }
+        .empty-state h2 {
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .empty-state p {
+            color: var(--text-light);
         }
     </style>
 </head>
@@ -201,73 +207,48 @@ try {
     <div class="container">
         <?php include '../includes/teacher-nav.php'; ?>
 
-        <div class="exam-header">
-            <h1 class="exam-title"><?php echo htmlspecialchars($exam['title']); ?></h1>
-            <p><?php echo htmlspecialchars($exam['description']); ?></p>
-            
-            <div class="exam-stats">
-                <div class="stat-card">
-                    <div class="stat-value"><?php echo $exam['total_attempts']; ?></div>
-                    <div class="stat-label">Total Attempts</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value"><?php echo number_format($exam['average_score'], 1); ?>%</div>
-                    <div class="stat-label">Average Score</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value"><?php echo $exam['total_questions']; ?></div>
-                    <div class="stat-label">Questions</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value"><?php echo $exam['passing_score']; ?>%</div>
-                    <div class="stat-label">Passing Score</div>
-                </div>
+        <div class="header">
+            <h1><?php echo htmlspecialchars($exam['title']); ?></h1>
+            <div class="exam-info">
+                <span><i class='bx bx-help-circle'></i> <?php echo $exam['total_questions']; ?> Questions</span>
+                <span><i class='bx bx-user'></i> <?php echo count($attempts); ?> Submissions</span>
+                <a href="manage-exams.php" class="btn btn-secondary">
+                    <i class='bx bx-arrow-back'></i> Back to Exams
+                </a>
             </div>
         </div>
 
-        <div class="attempts-table">
-            <?php if (empty($attempts)): ?>
-                <div class="no-attempts">
-                    <i class="fas fa-info-circle fa-2x"></i>
-                    <p>No attempts have been made for this exam yet.</p>
-                </div>
-            <?php else: ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Email</th>
-                            <th>Completion Time</th>
-                            <th>Questions Answered</th>
-                            <th>Score</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($attempts as $attempt): ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($attempt['student_name']); ?></td>
-                                <td><?php echo htmlspecialchars($attempt['student_email']); ?></td>
-                                <td><?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?></td>
-                                <td><?php echo $attempt['questions_answered']; ?>/<?php echo $exam['total_questions']; ?></td>
-                                <td><?php echo number_format($attempt['score'], 1); ?>%</td>
-                                <td>
-                                    <span class="score-badge <?php echo $attempt['score'] >= $exam['passing_score'] ? 'score-pass' : 'score-fail'; ?>">
-                                        <?php echo $attempt['score'] >= $exam['passing_score'] ? 'Passed' : 'Failed'; ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <a href="view-attempt.php?id=<?php echo $attempt['id']; ?>" class="btn-view">
-                                        <i class="fas fa-eye"></i> View Details
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-        </div>
+        <?php if (empty($attempts)): ?>
+            <div class="empty-state">
+                <i class='bx bx-info-circle'></i>
+                <h2>No Submissions Yet</h2>
+                <p>No students have completed this exam yet.</p>
+            </div>
+        <?php else: ?>
+            <div class="students-list">
+                <?php foreach ($attempts as $attempt): ?>
+                    <div class="student-item">
+                        <div class="student-info">
+                            <div class="student-name">
+                                <?php echo htmlspecialchars($attempt['full_name']); ?>
+                            </div>
+                            <div class="student-class">
+                                <?php echo htmlspecialchars($attempt['classroom_name']); ?>
+                            </div>
+                        </div>
+                        
+                        <div class="submission-date">
+                            <i class='bx bx-calendar'></i>
+                            <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?>
+                        </div>
+                        
+                        <a href="view-attempt.php?id=<?php echo $attempt['attempt_id']; ?>" class="btn btn-primary">
+                            <i class='bx bx-show'></i> View Details
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </body>
 </html>

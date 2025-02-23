@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : jeu. 20 fév. 2025 à 16:19
+-- Généré le : dim. 23 fév. 2025 à 17:31
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -75,24 +75,25 @@ CREATE TABLE `exams` (
   `id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
-  `duration_minutes` int(11) NOT NULL,
-  `passing_score` decimal(5,2) DEFAULT 60.00,
   `is_published` tinyint(1) NOT NULL DEFAULT 0,
   `start_date` datetime NOT NULL,
   `end_date` datetime NOT NULL,
-  `attempts_allowed` int(11) NOT NULL DEFAULT 1,
   `created_by` int(11) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `total_points` enum('10','20','40','100') NOT NULL DEFAULT '10',
+  `attempts_allowed` int(11) NOT NULL DEFAULT 1,
+  `passing_score` int(11) NOT NULL DEFAULT 60
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Déchargement des données de la table `exams`
 --
 
-INSERT INTO `exams` (`id`, `title`, `description`, `duration_minutes`, `passing_score`, `is_published`, `start_date`, `end_date`, `attempts_allowed`, `created_by`, `created_at`) VALUES
-(10, 'EXAM2', 'exam2 fhad nhar', 60, 60.00, 1, '2025-02-16 22:02:00', '2025-02-16 23:04:00', 1, 2, '2025-02-16 20:59:44'),
-(11, 'EXAM3 TEST', 'OIUOIYSDFHAJLòKàL', 60, 60.00, 1, '2025-02-16 22:55:00', '2025-02-16 23:55:00', 1, 2, '2025-02-16 21:50:30'),
-(12, 'Tire de l\'examen', 'description de l\'examen', 60, 50.00, 1, '2025-02-19 18:00:00', '2025-02-19 19:00:00', 1, 7, '2025-02-19 17:00:02');
+INSERT INTO `exams` (`id`, `title`, `description`, `is_published`, `start_date`, `end_date`, `created_by`, `created_at`, `total_points`, `attempts_allowed`, `passing_score`) VALUES
+(10, 'EXAM2', 'exam2 fhad nhar', 1, '2025-02-16 22:02:00', '2025-02-16 23:04:00', 2, '2025-02-16 20:59:44', '10', 1, 60),
+(11, 'EXAM3 TEST', 'OIUOIYSDFHAJLòKàL', 1, '2025-02-16 22:55:00', '2025-02-16 23:55:00', 2, '2025-02-16 21:50:30', '10', 1, 60),
+(16, 'CC10 ALGO', 'DESC', 1, '2025-02-20 17:00:00', '2025-02-20 19:00:00', 2, '2025-02-20 16:38:59', '10', 1, 60),
+(20, 'test_ghita', 'description', 1, '2025-02-23 15:00:00', '2025-02-23 16:00:00', 7, '2025-02-23 15:12:12', '10', 1, 60);
 
 -- --------------------------------------------------------
 
@@ -108,17 +109,22 @@ CREATE TABLE `exam_attempts` (
   `end_time` datetime DEFAULT NULL,
   `is_completed` tinyint(1) DEFAULT 0,
   `score` decimal(5,2) DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+  `graded_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `published` tinyint(1) NOT NULL DEFAULT 0,
+  `teacher_feedback` text DEFAULT NULL,
+  `graded_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Déchargement des données de la table `exam_attempts`
 --
 
-INSERT INTO `exam_attempts` (`id`, `exam_id`, `student_id`, `start_time`, `end_time`, `is_completed`, `score`, `created_at`) VALUES
-(10, 10, 1, '2025-02-16 22:34:34', NULL, 0, NULL, '2025-02-19 16:53:00'),
-(11, 10, 1, '2025-02-16 22:34:45', '2025-02-16 22:34:56', 1, 100.00, '2025-02-19 16:53:00'),
-(12, 11, 1, '2025-02-16 22:55:20', '2025-02-16 22:55:37', 1, 100.00, '2025-02-19 16:53:00');
+INSERT INTO `exam_attempts` (`id`, `exam_id`, `student_id`, `start_time`, `end_time`, `is_completed`, `score`, `graded_by`, `created_at`, `published`, `teacher_feedback`, `graded_at`) VALUES
+(10, 10, 1, '2025-02-16 22:34:34', NULL, 0, NULL, NULL, '2025-02-19 16:53:00', 0, NULL, NULL),
+(11, 10, 1, '2025-02-16 22:34:45', '2025-02-16 22:34:56', 1, 100.00, NULL, '2025-02-19 16:53:00', 0, NULL, NULL),
+(12, 11, 1, '2025-02-16 22:55:20', '2025-02-16 22:55:37', 1, 100.00, NULL, '2025-02-19 16:53:00', 0, NULL, NULL),
+(17, 20, 3, '2025-02-23 15:13:42', '2025-02-23 15:13:48', 1, 0.00, NULL, '2025-02-23 15:13:42', 0, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -140,7 +146,36 @@ CREATE TABLE `exam_classrooms` (
 INSERT INTO `exam_classrooms` (`id`, `exam_id`, `classroom_id`, `created_at`) VALUES
 (1, 10, 1, '2025-02-16 20:59:44'),
 (2, 11, 1, '2025-02-16 21:50:30'),
-(3, 12, 2, '2025-02-19 17:00:02');
+(7, 16, 1, '2025-02-20 16:38:59'),
+(11, 20, 2, '2025-02-23 15:12:12');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `exam_teachers`
+--
+
+CREATE TABLE `exam_teachers` (
+  `id` int(11) NOT NULL,
+  `exam_id` int(11) NOT NULL,
+  `teacher_id` int(11) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `grades`
+--
+
+CREATE TABLE `grades` (
+  `id` int(11) NOT NULL,
+  `attempt_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `teacher_id` int(11) NOT NULL,
+  `total_score` decimal(5,2) NOT NULL,
+  `comments` text DEFAULT NULL,
+  `graded_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -172,13 +207,7 @@ INSERT INTO `mcq_options` (`id`, `question_id`, `option_text`, `is_correct`) VAL
 (45, 24, 'OP4', 0),
 (46, 25, 'salam1', 1),
 (47, 26, 'True', 0),
-(48, 26, 'False', 1),
-(49, 27, 'True', 1),
-(50, 27, 'False', 0),
-(51, 28, 'OP1', 0),
-(52, 28, 'op2', 1),
-(53, 28, 'op3', 0),
-(54, 28, 'op4', 0);
+(48, 26, 'False', 1);
 
 -- --------------------------------------------------------
 
@@ -194,22 +223,22 @@ CREATE TABLE `questions` (
   `points` decimal(5,2) NOT NULL DEFAULT 1.00,
   `order_num` int(11) NOT NULL DEFAULT 1,
   `question_order` int(11) DEFAULT 0,
-  `correct_answer` varchar(255) DEFAULT NULL
+  `correct_answer` varchar(255) DEFAULT NULL,
+  `question_image` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Déchargement des données de la table `questions`
 --
 
-INSERT INTO `questions` (`id`, `exam_id`, `question_text`, `question_type`, `points`, `order_num`, `question_order`, `correct_answer`) VALUES
-(16, 10, 'TEXT QUESTION', 'mcq', 1.00, 1, 0, NULL),
-(17, 10, 'TRUE OR FALSE', 'mcq', 1.00, 1, 0, NULL),
-(24, 11, 'SOUAL LWL', 'mcq', 1.00, 1, 0, NULL),
-(25, 11, 'SOUAL SA3B', 'mcq', 1.00, 1, 0, NULL),
-(26, 11, 'KHAT2', 'mcq', 1.00, 1, 0, NULL),
-(27, 12, 'Question Text*', 'true_false', 10.00, 1, 0, NULL),
-(28, 12, 'Question multiple choice', 'mcq', 10.00, 2, 0, NULL),
-(29, 12, 'OPEN QUESTION', 'open', 10.00, 3, 0, NULL);
+INSERT INTO `questions` (`id`, `exam_id`, `question_text`, `question_type`, `points`, `order_num`, `question_order`, `correct_answer`, `question_image`) VALUES
+(16, 10, 'TEXT QUESTION', 'mcq', 1.00, 1, 0, NULL, NULL),
+(17, 10, 'TRUE OR FALSE', 'mcq', 1.00, 1, 0, NULL, NULL),
+(24, 11, 'SOUAL LWL', 'mcq', 1.00, 1, 0, NULL, NULL),
+(25, 11, 'SOUAL SA3B', 'mcq', 1.00, 1, 0, NULL, NULL),
+(26, 11, 'KHAT2', 'mcq', 1.00, 1, 0, NULL, NULL),
+(30, 16, 'Q1', 'true_false', 10.00, 1, 0, 'true', NULL),
+(34, 20, 'QUESTION1', 'open', 10.00, 1, 0, 'HH', NULL);
 
 -- --------------------------------------------------------
 
@@ -256,7 +285,10 @@ INSERT INTO `remember_tokens` (`id`, `user_id`, `token`, `created_at`, `expires_
 (27, 2, '598a0194190d15bed569ccaa3c4676520d9c980929d4590aeb728a90f0ce49f7', '2025-02-16 21:51:11', '2025-03-18 22:51:11'),
 (28, 1, '298ada66f07eb8b910967e98d3215371563c79b9cdb666ea27e2acee8a374b55', '2025-02-16 21:52:10', '2025-03-18 22:52:10'),
 (29, 2, '6e69180338c49ac8165a261ae1c6aa0cb5be78978d8f6cd2e32e14744da4bd29', '2025-02-16 21:52:57', '2025-03-18 22:52:57'),
-(30, 1, 'a377fd4c44196f92726caf6594f79802ee78cd4651109795eba49c02dc36d266', '2025-02-16 21:53:38', '2025-03-18 22:53:38');
+(30, 1, 'a377fd4c44196f92726caf6594f79802ee78cd4651109795eba49c02dc36d266', '2025-02-16 21:53:38', '2025-03-18 22:53:38'),
+(31, 3, 'cd0efc8b5ebacd3fb0647d1197fb15ee735d91506d0cf5ed2090c7f5817dab56', '2025-02-20 15:58:41', '2025-03-22 16:58:41'),
+(32, 7, 'd753ca087864765fa46e5b1a070e328804b361851de4107edd77d5593380c038', '2025-02-20 16:39:23', '2025-03-22 17:39:23'),
+(33, 7, 'a526e6b840149519a70ee224c28a782c52a2f9738db79d8d562f4551fbb56d3b', '2025-02-23 16:15:19', '2025-03-25 16:15:19');
 
 -- --------------------------------------------------------
 
@@ -271,19 +303,24 @@ CREATE TABLE `student_answers` (
   `answer_text` text DEFAULT NULL,
   `selected_option_id` int(11) DEFAULT NULL,
   `is_correct` tinyint(1) DEFAULT NULL,
-  `points_earned` decimal(5,2) DEFAULT NULL
+  `points_earned` decimal(5,2) DEFAULT NULL,
+  `manual_grade` decimal(5,2) DEFAULT NULL,
+  `teacher_comment` text DEFAULT NULL,
+  `graded_by` int(11) DEFAULT NULL,
+  `graded_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 --
 -- Déchargement des données de la table `student_answers`
 --
 
-INSERT INTO `student_answers` (`id`, `attempt_id`, `question_id`, `answer_text`, `selected_option_id`, `is_correct`, `points_earned`) VALUES
-(4, 11, 16, NULL, 23, 1, 1.00),
-(5, 11, 17, NULL, 27, 1, 1.00),
-(6, 12, 24, NULL, 44, 1, 1.00),
-(7, 12, 25, NULL, 46, 1, 1.00),
-(8, 12, 26, NULL, 48, 1, 1.00);
+INSERT INTO `student_answers` (`id`, `attempt_id`, `question_id`, `answer_text`, `selected_option_id`, `is_correct`, `points_earned`, `manual_grade`, `teacher_comment`, `graded_by`, `graded_at`) VALUES
+(4, 11, 16, NULL, 23, 1, 1.00, NULL, NULL, NULL, NULL),
+(5, 11, 17, NULL, 27, 1, 1.00, NULL, NULL, NULL, NULL),
+(6, 12, 24, NULL, 44, 1, 1.00, NULL, NULL, NULL, NULL),
+(7, 12, 25, NULL, 46, 1, 1.00, NULL, NULL, NULL, NULL),
+(8, 12, 26, NULL, 48, 1, 1.00, NULL, NULL, NULL, NULL),
+(11, 17, 34, 'sssss', NULL, NULL, 0.00, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -430,10 +467,10 @@ ALTER TABLE `exams`
 --
 ALTER TABLE `exam_attempts`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `exam_id` (`exam_id`),
   ADD KEY `idx_attempt_completion` (`is_completed`),
   ADD KEY `idx_student_exam` (`student_id`,`exam_id`),
-  ADD KEY `idx_completion_time` (`end_time`);
+  ADD KEY `idx_completion_time` (`end_time`),
+  ADD KEY `fk_exam` (`exam_id`);
 
 --
 -- Index pour la table `exam_classrooms`
@@ -442,6 +479,23 @@ ALTER TABLE `exam_classrooms`
   ADD PRIMARY KEY (`id`),
   ADD KEY `exam_id` (`exam_id`),
   ADD KEY `classroom_id` (`classroom_id`);
+
+--
+-- Index pour la table `exam_teachers`
+--
+ALTER TABLE `exam_teachers`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `exam_id` (`exam_id`),
+  ADD KEY `teacher_id` (`teacher_id`);
+
+--
+-- Index pour la table `grades`
+--
+ALTER TABLE `grades`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `attempt_id` (`attempt_id`),
+  ADD KEY `student_id` (`student_id`),
+  ADD KEY `teacher_id` (`teacher_id`);
 
 --
 -- Index pour la table `mcq_options`
@@ -473,9 +527,10 @@ ALTER TABLE `remember_tokens`
 --
 ALTER TABLE `student_answers`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `attempt_id` (`attempt_id`),
-  ADD KEY `question_id` (`question_id`),
-  ADD KEY `selected_option_id` (`selected_option_id`);
+  ADD KEY `selected_option_id` (`selected_option_id`),
+  ADD KEY `fk_attempt` (`attempt_id`),
+  ADD KEY `fk_question` (`question_id`),
+  ADD KEY `graded_by` (`graded_by`);
 
 --
 -- Index pour la table `users`
@@ -520,19 +575,31 @@ ALTER TABLE `classroom_students`
 -- AUTO_INCREMENT pour la table `exams`
 --
 ALTER TABLE `exams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
 --
 -- AUTO_INCREMENT pour la table `exam_attempts`
 --
 ALTER TABLE `exam_attempts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT pour la table `exam_classrooms`
 --
 ALTER TABLE `exam_classrooms`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+
+--
+-- AUTO_INCREMENT pour la table `exam_teachers`
+--
+ALTER TABLE `exam_teachers`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT pour la table `grades`
+--
+ALTER TABLE `grades`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `mcq_options`
@@ -544,19 +611,19 @@ ALTER TABLE `mcq_options`
 -- AUTO_INCREMENT pour la table `questions`
 --
 ALTER TABLE `questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
 
 --
 -- AUTO_INCREMENT pour la table `remember_tokens`
 --
 ALTER TABLE `remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=31;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
 
 --
 -- AUTO_INCREMENT pour la table `student_answers`
 --
 ALTER TABLE `student_answers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT pour la table `users`
@@ -604,7 +671,9 @@ ALTER TABLE `exams`
 --
 ALTER TABLE `exam_attempts`
   ADD CONSTRAINT `exam_attempts_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`),
-  ADD CONSTRAINT `exam_attempts_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `exam_attempts_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`),
+  ADD CONSTRAINT `fk_exam` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `exam_classrooms`
@@ -612,6 +681,21 @@ ALTER TABLE `exam_attempts`
 ALTER TABLE `exam_classrooms`
   ADD CONSTRAINT `exam_classrooms_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `exam_classrooms_ibfk_2` FOREIGN KEY (`classroom_id`) REFERENCES `classrooms` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `exam_teachers`
+--
+ALTER TABLE `exam_teachers`
+  ADD CONSTRAINT `exam_teachers_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `exam_teachers_ibfk_2` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Contraintes pour la table `grades`
+--
+ALTER TABLE `grades`
+  ADD CONSTRAINT `grades_ibfk_1` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `grades_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `grades_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Contraintes pour la table `mcq_options`
@@ -635,9 +719,12 @@ ALTER TABLE `remember_tokens`
 -- Contraintes pour la table `student_answers`
 --
 ALTER TABLE `student_answers`
+  ADD CONSTRAINT `fk_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_question` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `student_answers_ibfk_1` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`),
   ADD CONSTRAINT `student_answers_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`),
-  ADD CONSTRAINT `student_answers_ibfk_3` FOREIGN KEY (`selected_option_id`) REFERENCES `mcq_options` (`id`);
+  ADD CONSTRAINT `student_answers_ibfk_3` FOREIGN KEY (`selected_option_id`) REFERENCES `mcq_options` (`id`),
+  ADD CONSTRAINT `student_answers_ibfk_4` FOREIGN KEY (`graded_by`) REFERENCES `users` (`id`);
 
 --
 -- Contraintes pour la table `users`

@@ -2,6 +2,7 @@
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
+require_once 'ExamManager.php'; // Create this file to store the ExamManager class
 
 checkRole('student');
 
@@ -20,44 +21,67 @@ try {
 
     $examId = $_GET['id'];
 
-    // Get exam details
+    // Get exam details with questions
     $stmt = $conn->prepare("
-        SELECT e.*, u.full_name as teacher_name
+        SELECT 
+            e.*,
+            u.full_name as teacher_name,
+            c.name as classroom_name,
+            c.department
         FROM exams e
         JOIN users u ON e.created_by = u.id
-        WHERE e.id = ?
+        JOIN exam_classrooms ec ON e.id = ec.exam_id
+        JOIN classrooms c ON ec.classroom_id = c.id
+        JOIN classroom_students cs ON c.id = cs.classroom_id
+        WHERE e.id = ? 
+        AND cs.student_id = ?
+        AND e.is_published = 1
     ");
-    $stmt->execute([$examId]);
+    $stmt->execute([$examId, $_SESSION['user_id']]);
     $exam = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$exam) {
-        setFlashMessage('error', 'Exam not found');
-        header('Location: exams.php');
-        exit();
+        throw new Exception('Exam not found or access denied.');
     }
 
-    // Check if student can take the exam
-    if (!$examManager->canStartExam($exam)) {
-        setFlashMessage('error', 'You cannot start this exam at this time');
-        header('Location: exams.php');
-        exit();
-    }
+    // Get questions
+    $stmt = $conn->prepare("
+        SELECT 
+            q.*,
+            GROUP_CONCAT(
+                CONCAT(mo.id, ':', mo.option_text)
+                ORDER BY mo.id ASC
+                SEPARATOR '||'
+            ) as options
+        FROM questions q
+        LEFT JOIN mcq_options mo ON q.id = mo.question_id
+        WHERE q.exam_id = ?
+        GROUP BY q.id
+        ORDER BY q.order_num ASC
+    ");
+    $stmt->execute([$examId]);
+    $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Start the exam
-    if ($examManager->startExam($examId)) {
-        // Redirect to the exam interface
-        header('Location: exam-interface.php?exam_id=' . $examId);
-        exit();
-    } else {
-        setFlashMessage('error', 'Failed to start exam');
-        header('Location: exams.php');
-        exit();
+    // Start new attempt if not already started
+    if (!isset($_SESSION['current_attempt'])) {
+        $examManager->startExam($examId);
+        
+        // Get the new attempt ID
+        $stmt = $conn->prepare("
+            SELECT id FROM exam_attempts 
+            WHERE exam_id = ? AND student_id = ? 
+            AND is_completed = 0 
+            ORDER BY start_time DESC LIMIT 1
+        ");
+        $stmt->execute([$examId, $_SESSION['user_id']]);
+        $attempt = $stmt->fetch(PDO::FETCH_ASSOC);
+        $_SESSION['current_attempt'] = $attempt['id'];
     }
 
 } catch (Exception $e) {
     error_log("Error in take-exam.php: " . $e->getMessage());
-    setFlashMessage('error', 'An error occurred');
-    header('Location: exams.php');
+    setFlashMessage('error', $e->getMessage());
+    header('Location: dashboard.php');
     exit();
 }
 ?>
@@ -67,7 +91,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($exam['title']); ?> - <?php echo SITE_NAME; ?></title>
+    <title>Take Exam - <?php echo htmlspecialchars($exam['title']); ?></title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         :root {
@@ -249,8 +273,8 @@ try {
             </div>
         </div>
 
-        <form id="examForm" method="POST" onsubmit="return confirmSubmit()">
-            <input type="hidden" name="attempt_id" value="<?php echo $attempt_id; ?>">
+        <form id="examForm" method="POST" action="submit-exam.php" onsubmit="return confirmSubmit()">
+            <input type="hidden" name="attempt_id" value="<?php echo $_SESSION['current_attempt']; ?>">
             <input type="hidden" name="start_time" value="<?php echo date('Y-m-d H:i:s'); ?>">
             
             <?php foreach ($questions as $index => $question): ?>
@@ -260,21 +284,26 @@ try {
                         <?php echo htmlspecialchars($question['question_text']); ?>
                     </h3>
                     
+                    <?php if ($question['question_image']): ?>
+                        <img src="../uploads/questions/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                             alt="Question image" class="question-image">
+                    <?php endif; ?>
+
                     <div class="options">
                         <?php if ($question['question_type'] === 'mcq'): ?>
                             <?php 
-                            $options = explode('|||', $question['options']);
+                            $options = explode('||', $question['options']);
                             foreach ($options as $option):
-                                list($option_id, $option_text) = explode(':::', $option);
+                                list($optionId, $optionText) = explode(':', $option);
                             ?>
                                 <div class="option">
                                     <input type="radio" 
-                                           id="option_<?php echo $option_id; ?>"
+                                           id="option_<?php echo $optionId; ?>"
                                            name="answers[<?php echo $question['id']; ?>]" 
-                                           value="<?php echo $option_id; ?>"
+                                           value="<?php echo $optionId; ?>"
                                            required>
-                                    <label for="option_<?php echo $option_id; ?>">
-                                        <?php echo htmlspecialchars($option_text); ?>
+                                    <label for="option_<?php echo $optionId; ?>">
+                                        <?php echo htmlspecialchars($optionText); ?>
                                     </label>
                                 </div>
                             <?php endforeach; ?>
@@ -295,6 +324,10 @@ try {
                                        required>
                                 <label for="false_<?php echo $question['id']; ?>">False</label>
                             </div>
+                        <?php else: ?>
+                            <textarea name="answers[<?php echo $question['id']; ?>]" 
+                                      class="form-control" rows="3" required
+                                      placeholder="Enter your answer"></textarea>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -375,6 +408,16 @@ try {
         form.addEventListener('submit', () => {
             localStorage.removeItem('examAnswers');
         });
+
+        // Add confirmation before leaving page
+        window.onbeforeunload = function() {
+            return "Are you sure you want to leave? Your progress will not be saved.";
+        };
+
+        // Remove warning when submitting form
+        document.getElementById('examForm').onsubmit = function() {
+            window.onbeforeunload = null;
+        };
     </script>
 </body>
 </html>

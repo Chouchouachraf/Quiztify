@@ -45,21 +45,29 @@ if (isset($_POST['delete_exam'])) {
     header('Location: exams.php');
     exit;
 }
+
+// Add the helper function
+function calculatePoints($percentage, $total_points) {
+    return ($percentage / 100) * $total_points;
+}
+
 try {
-    // Get all exams created by the teacher with statistics
+    // Update the exams query to include total_points and other relevant fields
     $stmt = $conn->prepare("
         SELECT 
             e.*,
+            c.name as classroom_name,
             COUNT(DISTINCT q.id) as question_count,
             COUNT(DISTINCT ea.id) as attempt_count,
-            AVG(ea.score) as average_score,
-            MIN(ea.score) as lowest_score,
-            MAX(ea.score) as highest_score
+            AVG(CASE WHEN ea.is_completed = 1 THEN ea.score ELSE NULL END) as average_score,
+            COUNT(CASE WHEN ea.is_completed = 1 AND ea.score >= e.passing_score THEN 1 END) as passed_count
         FROM exams e
+        LEFT JOIN exam_classrooms ec ON e.id = ec.exam_id
+        LEFT JOIN classrooms c ON ec.classroom_id = c.id
         LEFT JOIN questions q ON e.id = q.exam_id
         LEFT JOIN exam_attempts ea ON e.id = ea.exam_id
         WHERE e.created_by = ?
-        GROUP BY e.id
+        GROUP BY e.id, e.title, c.name
         ORDER BY e.created_at DESC
     ");
     
@@ -307,6 +315,24 @@ try {
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+
+        .percentage {
+            color: #666;
+            font-size: 0.85em;
+            margin-left: 5px;
+        }
+
+        .score-display {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .score-value {
+            font-size: 1.2em;
+            font-weight: 500;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -357,11 +383,21 @@ try {
                                 <div class="stat-label">Attempts</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value"><?php echo $exam['average_score'] ? number_format($exam['average_score'], 1) : '0'; ?>%</div>
+                                <div class="stat-value">
+                                    <?php if ($exam['average_score']): ?>
+                                        <?= number_format(calculatePoints($exam['average_score'], $exam['total_points']), 1) ?>/<?= $exam['total_points'] ?>
+                                        <small class="percentage">(<?= number_format($exam['average_score'], 1) ?>%)</small>
+                                    <?php else: ?>
+                                        No attempts
+                                    <?php endif; ?>
+                                </div>
                                 <div class="stat-label">Avg. Score</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value"><?php echo $exam['passing_score']; ?>%</div>
+                                <div class="stat-value">
+                                    <?= number_format(calculatePoints($exam['passing_score'], $exam['total_points']), 1) ?>/<?= $exam['total_points'] ?>
+                                    <small class="percentage">(<?= $exam['passing_score'] ?>%)</small>
+                                </div>
                                 <div class="stat-label">Pass Score</div>
                             </div>
                         </div>

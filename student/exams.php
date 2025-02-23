@@ -21,42 +21,36 @@ class ExamManager {
                     e.*,
                     u.full_name as teacher_name,
                     COUNT(DISTINCT q.id) as question_count,
+                    c.name as classroom_name,
+                    c.department,
                     (
                         SELECT COUNT(*) 
-                        FROM exam_attempts ea 
-                        WHERE ea.exam_id = e.id 
-                        AND ea.student_id = ? 
-                        AND ea.is_completed = 0
+                        FROM exam_attempts 
+                        WHERE exam_id = e.id 
+                        AND student_id = ? 
+                        AND is_completed = 0
                     ) as ongoing_attempts,
                     (
                         SELECT COUNT(*) 
-                        FROM exam_attempts ea 
-                        WHERE ea.exam_id = e.id 
-                        AND ea.student_id = ?
-                        AND ea.is_completed = 1
+                        FROM exam_attempts 
+                        WHERE exam_id = e.id 
+                        AND student_id = ? 
+                        AND is_completed = 1
                     ) as completed_attempts,
-                    c.name as classroom_name
+                    SUM(q.points) as total_points
                 FROM exams e
                 JOIN users u ON e.created_by = u.id
-                LEFT JOIN questions q ON e.id = q.exam_id
                 JOIN exam_classrooms ec ON e.id = ec.exam_id
                 JOIN classrooms c ON ec.classroom_id = c.id
                 JOIN classroom_students cs ON c.id = cs.classroom_id
+                LEFT JOIN questions q ON e.id = q.exam_id
                 WHERE cs.student_id = ?
                 AND e.is_published = 1
-                AND e.end_date >= NOW()
-                AND (
-                    SELECT COUNT(*) 
-                    FROM exam_attempts ea 
-                    WHERE ea.exam_id = e.id 
-                    AND ea.student_id = ?
-                    AND ea.is_completed = 1
-                ) < e.attempts_allowed
                 GROUP BY e.id
                 ORDER BY e.start_date ASC
             ");
 
-            $stmt->execute([$this->userId, $this->userId, $this->userId, $this->userId]);
+            $stmt->execute([$this->userId, $this->userId, $this->userId]);
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
             error_log("Error fetching available exams: " . $e->getMessage());
@@ -65,26 +59,16 @@ class ExamManager {
     }
 
     public function canStartExam($exam) {
-        $now = new DateTime('now', new DateTimeZone('Africa/Casablanca'));
-        $startTime = new DateTime($exam['start_date']);
+        $now = new DateTime('now');
         $endTime = new DateTime($exam['end_date']);
 
-        // Check if exam is within time window
-        if ($now < $startTime) {
-            return false;
-        }
-
+        // Only check if exam has ended
         if ($now > $endTime) {
             return false;
         }
 
         // Check if student has ongoing attempts
         if ($exam['ongoing_attempts'] > 0) {
-            return false;
-        }
-
-        // Check if student has remaining attempts
-        if (($exam['completed_attempts'] ?? 0) >= $exam['attempts_allowed']) {
             return false;
         }
 
@@ -95,19 +79,50 @@ class ExamManager {
         try {
             $this->conn->beginTransaction();
 
+            // Verify exam is published and student has access
+            $stmt = $this->conn->prepare("
+                SELECT e.* 
+                FROM exams e
+                JOIN exam_classrooms ec ON e.id = ec.exam_id
+                JOIN classrooms c ON ec.classroom_id = c.id
+                JOIN classroom_students cs ON c.id = cs.classroom_id
+                WHERE e.id = ?
+                AND cs.student_id = ?
+                AND e.is_published = 1
+            ");
+            $stmt->execute([$examId, $this->userId]);
+            $exam = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$exam) {
+                throw new Exception('Exam not available or access denied.');
+            }
+
+            // Check for existing incomplete attempts
+            $stmt = $this->conn->prepare("
+                SELECT id FROM exam_attempts 
+                WHERE exam_id = ? 
+                AND student_id = ? 
+                AND is_completed = 0
+            ");
+            $stmt->execute([$examId, $this->userId]);
+            if ($stmt->rowCount() > 0) {
+                throw new Exception('You have an ongoing attempt for this exam.');
+            }
+
             // Insert new attempt
             $stmt = $this->conn->prepare("
-                INSERT INTO exam_attempts (exam_id, student_id, start_time, is_completed)
-                VALUES (?, ?, NOW(), 0)
+                INSERT INTO exam_attempts (
+                    exam_id, student_id, start_time, is_completed
+                ) VALUES (?, ?, NOW(), 0)
             ");
             $stmt->execute([$examId, $this->userId]);
 
             $this->conn->commit();
             return true;
-        } catch (PDOException $e) {
+        } catch (Exception $e) {
             $this->conn->rollBack();
             error_log("Error starting exam: " . $e->getMessage());
-            return false;
+            throw $e;
         }
     }
 }

@@ -21,7 +21,8 @@ try {
                 SELECT COUNT(*) 
                 FROM exam_attempts 
                 WHERE exam_id = e.id AND student_id = ? AND is_completed = 1
-            ) as attempts_taken
+            ) as attempts_taken,
+            SUM(q.points) as total_points
         FROM exams e
         JOIN users u ON e.created_by = u.id
         JOIN exam_classrooms ec ON e.id = ec.exam_id
@@ -30,6 +31,7 @@ try {
         LEFT JOIN questions q ON e.id = q.exam_id
         WHERE e.is_published = 1
         AND cs.student_id = ?
+        AND e.end_date >= NOW()
         GROUP BY e.id
         ORDER BY e.start_date ASC
     ");
@@ -44,7 +46,7 @@ try {
             ea.end_time,
             ea.score,
             e.title,
-            e.passing_score,
+            e.total_points,
             c.name as classroom_name
         FROM exam_attempts ea
         JOIN exams e ON ea.exam_id = e.id
@@ -291,29 +293,25 @@ try {
                     </div>
                 <?php else: ?>
                     <?php foreach ($availableExams as $exam): ?>
-                        <?php
-                        $now = time();
-                        $startTime = strtotime($exam['start_date']);
-                        $endTime = strtotime($exam['end_date']);
-                        $canTakeExam = ($now >= $startTime && $now <= $endTime && 
-                                      ($exam['attempts_taken'] < $exam['attempts_allowed']));
-                        ?>
                         <div class="exam-card">
                             <div class="exam-header">
                                 <div>
                                     <h3 class="exam-title"><?php echo htmlspecialchars($exam['title']); ?></h3>
                                     <div class="exam-meta">
                                         <span class="teacher-name">By: <?php echo htmlspecialchars($exam['teacher_name']); ?></span>
-                                        <span class="classroom-name"><?php echo htmlspecialchars($exam['classroom_name']); ?> (<?php echo htmlspecialchars($exam['department']); ?>)</span>
+                                        <span class="classroom-name"><?php echo htmlspecialchars($exam['classroom_name']); ?> 
+                                            (<?php echo htmlspecialchars($exam['department']); ?>)</span>
                                     </div>
                                 </div>
                                 <?php
+                                $now = new DateTime();
+                                $startTime = new DateTime($exam['start_date']);
+                                $endTime = new DateTime($exam['end_date']);
+                                
                                 if ($now < $startTime) {
                                     echo '<span class="exam-status status-upcoming">Upcoming</span>';
                                 } elseif ($now <= $endTime) {
                                     echo '<span class="exam-status status-active">Active</span>';
-                                } else {
-                                    echo '<span class="exam-status status-expired">Expired</span>';
                                 }
                                 ?>
                             </div>
@@ -326,46 +324,44 @@ try {
                                     <span><?php echo $exam['question_count']; ?> questions</span>
                                 </div>
                                 <div class="exam-stat-item">
-                                    <i class='bx bx-time'></i>
-                                    <span><?php echo $exam['duration_minutes']; ?> minutes</span>
-                                </div>
-                                <div class="exam-stat-item">
-                                    <i class='bx bx-revision'></i>
-                                    <span>Attempts: <?php echo $exam['attempts_taken']; ?>/<?php echo $exam['attempts_allowed']; ?></span>
-                                </div>
-                                <div class="exam-stat-item">
                                     <i class='bx bx-trophy'></i>
-                                    <span>Passing: <?php echo $exam['passing_score']; ?>%</span>
+                                    <span>Total Points: <?php echo $exam['total_points']; ?></span>
+                                </div>
+                                <div class="exam-stat-item">
+                                    <i class='bx bx-time'></i>
+                                    <span>Duration: <?php 
+                                        $duration = round((strtotime($exam['end_date']) - strtotime($exam['start_date'])) / 3600, 1);
+                                        echo $duration . ' hours';
+                                    ?></span>
                                 </div>
                             </div>
                             
                             <div class="exam-dates">
                                 <div class="exam-stat-item">
                                     <i class='bx bx-calendar'></i>
-                                    <span>Start: <?php echo date('M j, Y g:i A', $startTime); ?></span>
+                                    <span>Start: <?php echo $startTime->format('M j, Y g:i A'); ?></span>
                                 </div>
                                 <div class="exam-stat-item">
                                     <i class='bx bx-calendar-check'></i>
-                                    <span>End: <?php echo date('M j, Y g:i A', $endTime); ?></span>
+                                    <span>End: <?php echo $endTime->format('M j, Y g:i A'); ?></span>
                                 </div>
                             </div>
                             
                             <div class="exam-actions">
-                                <?php if ($now < $startTime): ?>
-                                    <button class="btn-start" disabled>
-                                        <i class='bx bx-time'></i> Available from <?php echo date('M j, Y g:i A', $startTime); ?>
-                                    </button>
-                                <?php elseif ($now > $endTime): ?>
+                                <?php if ($now > $endTime): ?>
                                     <button class="btn-start" disabled>
                                         <i class='bx bx-x-circle'></i> Exam Expired
                                     </button>
-                                <?php elseif ($exam['attempts_taken'] >= $exam['attempts_allowed']): ?>
-                                    <button class="btn-start" disabled>
-                                        <i class='bx bx-block'></i> No Attempts Remaining
-                                    </button>
+                                <?php elseif ($exam['ongoing_attempts'] > 0): ?>
+                                    <a href="resume-exam.php?id=<?php echo $exam['id']; ?>" class="btn-start">
+                                        <i class='bx bx-play-circle'></i> Resume Exam
+                                    </a>
                                 <?php else: ?>
                                     <a href="take-exam.php?id=<?php echo $exam['id']; ?>" class="btn-start">
                                         <i class='bx bx-play'></i> Start Exam
+                                        <?php if ($now > $startTime): ?>
+                                            <small>(Late start)</small>
+                                        <?php endif; ?>
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -381,10 +377,14 @@ try {
                         <div class="attempt-card">
                             <h4><?php echo htmlspecialchars($attempt['title']); ?></h4>
                             <p class="classroom-name"><?php echo htmlspecialchars($attempt['classroom_name']); ?></p>
-                            <p>Score: <?php echo number_format($attempt['score'], 1); ?>%</p>
+                            <p>
+                                Score: 
+                                <?= number_format(($attempt['score'] / 100) * $attempt['total_points'], 1) ?>/<?= $attempt['total_points'] ?>
+                                <small class="percentage">(<?= number_format($attempt['score'], 1) ?>%)</small>
+                            </p>
                             <p>Completed: <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?></p>
-                            <span class="badge <?php echo ($attempt['score'] >= $attempt['passing_score']) ? 'badge-success' : 'badge-danger'; ?>">
-                                <?php echo ($attempt['score'] >= $attempt['passing_score']) ? 'Passed' : 'Failed'; ?>
+                            <span class="badge <?php echo ($attempt['score'] >= ($attempt['total_points'] * 0.5)) ? 'badge-success' : 'badge-danger'; ?>">
+                                <?php echo ($attempt['score'] >= ($attempt['total_points'] * 0.5)) ? 'Passed' : 'Failed'; ?>
                             </span>
                         </div>
                     <?php endforeach; ?>

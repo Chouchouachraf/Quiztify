@@ -88,14 +88,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Add new questions and options
             if (isset($_POST['questions']) && is_array($_POST['questions'])) {
-                foreach ($_POST['questions'] as $q) {
+                foreach ($_POST['questions'] as $index => $q) {
+                    // Handle image upload
+                    $question_image = null;
+                    if (isset($_FILES['questions']['name'][$index]['image']) && 
+                        $_FILES['questions']['error'][$index]['image'] === UPLOAD_ERR_OK) {
+                        
+                        $image = $_FILES['questions']['name'][$index]['image'];
+                        $image_temp = $_FILES['questions']['tmp_name'][$index]['image'];
+                        $image_ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
+                        
+                        // Validate image type
+                        $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
+                        if (!in_array($image_ext, $allowed_types)) {
+                            throw new Exception('Invalid image type. Allowed types: ' . implode(', ', $allowed_types));
+                        }
+                        
+                        // Generate unique filename
+                        $new_filename = uniqid() . '.' . $image_ext;
+                        $upload_path = '../uploads/questions/' . $new_filename;
+                        
+                        // Create directory if it doesn't exist
+                        if (!is_dir('../uploads/questions')) {
+                            mkdir('../uploads/questions', 0777, true);
+                        }
+                        
+                        // Move uploaded file
+                        if (move_uploaded_file($image_temp, $upload_path)) {
+                            $question_image = $new_filename;
+                        }
+                    }
+
+                    // Insert question with image
                     $stmt = $conn->prepare("
-                        INSERT INTO questions (exam_id, question_text)
-                        VALUES (?, ?)
+                        INSERT INTO questions (exam_id, question_text, question_image)
+                        VALUES (?, ?, ?)
                     ");
-                    $stmt->execute([$examId, $q['text']]);
+                    $stmt->execute([$examId, $q['text'], $question_image]);
                     $questionId = $conn->lastInsertId();
 
+                    // Handle options
                     foreach ($q['options'] as $index => $option) {
                         $stmt = $conn->prepare("
                             INSERT INTO mcq_options (question_id, option_text, is_correct)
@@ -213,6 +245,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 4px;
             margin-bottom: 20px;
         }
+
+        .current-image {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .current-image img {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin-bottom: 10px;
+        }
+        
+        .option-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .option-item input[type="radio"] {
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -228,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form method="POST" id="editExamForm">
+        <form method="POST" id="editExamForm" enctype="multipart/form-data">
             <div class="form-section">
                 <h2>Basic Details</h2>
                 <div class="form-group">
@@ -294,6 +351,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            class="form-control" value="<?php echo htmlspecialchars($question['question_text']); ?>" required>
                                 </div>
 
+                                <div class="form-group">
+                                    <label>Question Image</label>
+                                    <?php if ($question['question_image']): ?>
+                                        <div class="current-image">
+                                            <img src="../uploads/questions/<?php echo htmlspecialchars($question['question_image']); ?>" 
+                                                 alt="Question image" style="max-width: 200px; margin: 10px 0;">
+                                            <div>
+                                                <label>
+                                                    <input type="checkbox" name="questions[<?php echo $index; ?>][remove_image]" value="1">
+                                                    Remove image
+                                                </label>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+                                    <input type="file" name="questions[<?php echo $index; ?>][image]" 
+                                           class="form-control" accept="image/*">
+                                </div>
+
                                 <div class="options-list">
                                     <?php 
                                     $options = explode('|||', $question['options']);
@@ -334,6 +409,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label>Question ${questionIndex + 1}</label>
                     <input type="text" name="questions[${questionIndex}][text]" class="form-control" required>
                 </div>
+                
+                <div class="form-group">
+                    <label>Question Image</label>
+                    <input type="file" name="questions[${questionIndex}][image]" class="form-control" accept="image/*">
+                </div>
+
                 <div class="options-list">
                     ${Array(4).fill().map((_, i) => `
                         <div class="option-item">

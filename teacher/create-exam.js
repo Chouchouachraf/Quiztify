@@ -1,71 +1,59 @@
 let questionCounter = 0;
 
-function addQuestion(type) {
-    const container = document.getElementById('questions-container');
-    const questionBox = document.createElement('div');
-    questionBox.className = 'question-box';
-    questionBox.dataset.questionIndex = questionCounter;
-
-    let template = `
-        <div class="question-header">
+function addQuestion() {
+    const container = document.getElementById('questionsContainer');
+    const questionDiv = document.createElement('div');
+    questionDiv.className = 'question-container';
+    questionDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-3">
             <h4>Question ${questionCounter + 1}</h4>
-            <button type="button" class="btn btn-danger" onclick="removeQuestion(this)">
-                <i class="fas fa-trash"></i>
-            </button>
+            <span class="remove-question" onclick="removeQuestion(this)">×</span>
         </div>
-
-        <input type="hidden" name="questions[${questionCounter}][type]" value="${type}">
         
-        <div class="form-group">
-            <label>Question Text</label>
-            <textarea name="questions[${questionCounter}][text]" required rows="3"></textarea>
+        <div class="mb-3">
+            <label class="form-label">Question Text*</label>
+            <textarea name="questions[${questionCounter}][text]" class="form-control" required></textarea>
         </div>
 
-        <div class="form-group">
-            <label>Points</label>
-            <input type="number" name="questions[${questionCounter}][points]" value="1" min="0.5" step="0.5" required>
-        </div>`;
+        <div class="mb-3">
+            <label class="form-label">Question Image</label>
+            <input type="file" name="questions[${questionCounter}][image]" class="form-control" accept="image/*">
+        </div>
 
-    // Add type-specific fields
-    if (type === 'mcq') {
-        template += `
-            <div class="mcq-options">
-                <div class="options-list">
-                    <div class="option-row">
-                        <input type="text" name="questions[${questionCounter}][options][]" placeholder="Option 1" required>
-                        <input type="radio" name="questions[${questionCounter}][correct]" value="0" required>
-                        <button type="button" class="btn btn-danger" onclick="removeOption(this)">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <button type="button" class="btn btn-secondary" onclick="addOption(${questionCounter})">
-                    Add Option
-                </button>
-            </div>`;
-    } else if (type === 'true_false') {
-        template += `
-            <div class="true-false-options">
-                <label>Correct Answer</label>
-                <div class="radio-group">
-                    <label>
-                        <input type="radio" name="questions[${questionCounter}][correct]" value="true" required> True
-                    </label>
-                    <label>
-                        <input type="radio" name="questions[${questionCounter}][correct]" value="false" required> False
-                    </label>
-                </div>
-            </div>`;
-    }
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Question Type*</label>
+                <select name="questions[${questionCounter}][type]" class="form-control" 
+                        onchange="handleQuestionType(this, ${questionCounter})" required>
+                    <option value="mcq">Multiple Choice</option>
+                    <option value="true_false">True/False</option>
+                    <option value="open">Open Answer</option>
+                </select>
+            </div>
+            <div class="col-md-6" id="optionsCount_${questionCounter}" style="display:none;">
+                <label class="form-label">Number of Options</label>
+                <select class="form-control" onchange="updateOptions(this, ${questionCounter})">
+                    <option value="2">2 Options</option>
+                    <option value="3">3 Options</option>
+                    <option value="4" selected>4 Options</option>
+                    <option value="5">5 Options</option>
+                    <option value="6">6 Options</option>
+                </select>
+            </div>
+        </div>
 
-    questionBox.innerHTML = template;
-    container.appendChild(questionBox);
+        <div id="options_${questionCounter}" class="options-container">
+            <!-- Options will be added here based on question type -->
+        </div>
+    `;
+    container.appendChild(questionDiv);
+    handleQuestionType(questionDiv.querySelector('select'), questionCounter);
     questionCounter++;
 }
 
 function removeQuestion(button) {
     if (confirm('Are you sure you want to remove this question?')) {
-        const questionBox = button.closest('.question-box');
+        const questionBox = button.closest('.question-container');
         questionBox.remove();
         updateQuestionNumbers();
     }
@@ -106,14 +94,14 @@ function removeOption(button) {
 }
 
 function updateQuestionNumbers() {
-    document.querySelectorAll('.question-box').forEach((box, index) => {
+    document.querySelectorAll('.question-container').forEach((box, index) => {
         box.querySelector('h4').textContent = `Question ${index + 1}`;
     });
 }
 
 // Form validation
 document.getElementById('examForm').addEventListener('submit', function(e) {
-    const questions = document.querySelectorAll('.question-box');
+    const questions = document.querySelectorAll('.question-container');
     
     if (questions.length === 0) {
         e.preventDefault();
@@ -123,7 +111,7 @@ document.getElementById('examForm').addEventListener('submit', function(e) {
 
     // Validate each question
     questions.forEach((question, index) => {
-        const type = question.querySelector('input[name^="questions"][name$="[type]"]').value;
+        const type = question.querySelector('select[name="questions[' + index + '][type]"]').value;
         
         if (type === 'mcq') {
             const options = question.querySelectorAll('.option-row');

@@ -172,3 +172,24 @@ try {
     die("Error updating database: " . $e->getMessage());
 }
 ?>
+
+<style>
+    /* Add to existing styles */
+    .question-points {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+    
+    .question-points input {
+        font-size: 1.1rem;
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .question-points small {
+        display: block;
+        text-align: center;
+        margin-top: 5px;
+    }
+</style>

@@ -1,73 +1,127 @@
 <?php
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
 
 checkRole('teacher');
 
-$attempt_id = $_GET['id'] ?? null;
-$format = $_GET['format'] ?? 'html';
+$attemptId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$conn = getDBConnection();
 
-if (!$attempt_id) {
-    setFlashMessage('error', 'Invalid attempt ID');
-    header('Location: dashboard.php');
-    exit;
+// Add this helper function at the top of the file
+function calculatePoints($percentage, $total_points) {
+    return ($percentage / 100) * $total_points;
 }
 
-try {
-    $conn = getDBConnection();
-    
-    // Fetch attempt details with student and exam info
-    $stmt = $conn->prepare("
-        SELECT 
-            ea.*,
-            e.title as exam_title,
-            e.passing_score,
-            e.duration_minutes,
-            u.full_name as student_name,
-            u.email as student_email,
-            c.name as classroom_name,
-            c.department
-        FROM exam_attempts ea
-        JOIN exams e ON ea.exam_id = e.id
-        JOIN users u ON ea.student_id = u.id
-        JOIN exam_classrooms ec ON e.id = ec.exam_id
-        JOIN classrooms c ON ec.classroom_id = c.id
-        WHERE ea.id = ? AND e.created_by = ?
-    ");
-    $stmt->execute([$attempt_id, $_SESSION['user_id']]);
-    $attempt = $stmt->fetch();
+// Get attempt details
+$stmt = $conn->prepare("
+    SELECT 
+        ea.*,
+        e.id as exam_id,
+        e.title as exam_title,
+        e.description as exam_description,
+        e.total_points,
+        u.full_name as student_name,
+        c.name as classroom_name
+    FROM exam_attempts ea
+    JOIN exams e ON ea.exam_id = e.id
+    JOIN users u ON ea.student_id = u.id
+    JOIN classroom_students cs ON u.id = cs.student_id
+    JOIN classrooms c ON cs.classroom_id = c.id
+    WHERE ea.id = ?
+");
+$stmt->execute([$attemptId]);
+$attempt = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$attempt) {
-        throw new Exception('Attempt not found or unauthorized access.');
+// Get student answers
+$stmt = $conn->prepare("
+    SELECT 
+        q.id as question_id,
+        q.question_text,
+        q.points as max_points,
+        sa.id as answer_id,
+        sa.answer_text,
+        sa.points_earned,
+        sa.teacher_comment,
+        sa.selected_option_id,
+        mo.option_text as selected_option
+    FROM questions q
+    LEFT JOIN student_answers sa ON q.id = sa.question_id AND sa.attempt_id = ?
+    LEFT JOIN mcq_options mo ON sa.selected_option_id = mo.id
+    WHERE q.exam_id = ?
+    ORDER BY q.order_num
+");
+$stmt->execute([$attemptId, $attempt['exam_id']]);
+$answers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    try {
+        $conn->beginTransaction();
+        
+        $totalPoints = 0;
+        $maxPoints = 0;
+
+        // Save grades for each answer
+        foreach ($answers as $answer) {
+            if (isset($_POST['points'][$answer['answer_id']])) {
+                $points = min(floatval($_POST['points'][$answer['answer_id']]), $answer['max_points']);
+                $comment = $_POST['comments'][$answer['answer_id']] ?? '';
+                
+                $stmt = $conn->prepare("
+                    UPDATE student_answers 
+                    SET points_earned = ?,
+                        teacher_comment = ?,
+                        graded_at = NOW(),
+                        graded_by = ?
+                    WHERE id = ?
+                ");
+                $stmt->execute([$points, $comment, $_SESSION['user_id'], $answer['answer_id']]);
+                
+                $totalPoints += $points;
+                $maxPoints += $answer['max_points'];
+            }
+        }
+
+        // Calculate final score
+        $finalScore = ($maxPoints > 0) ? ($totalPoints / $maxPoints) * 100 : 0;
+
+        // Update attempt
+        $stmt = $conn->prepare("
+            UPDATE exam_attempts 
+            SET score = ?,
+                teacher_feedback = ?,
+                published = ?,
+                graded_at = NOW(),
+                graded_by = ?
+            WHERE id = ?
+        ");
+        $stmt->execute([
+            $finalScore,
+            $_POST['overall_feedback'],
+            isset($_POST['publish']) ? 1 : 0,
+            $_SESSION['user_id'],
+            $attemptId
+        ]);
+
+        $conn->commit();
+        
+        $_SESSION['grade_confirmation'] = [
+            'exam_title' => $attempt['exam_title'],
+            'student_name' => $attempt['student_name'],
+            'score' => $finalScore,
+            'published' => isset($_POST['publish']),
+            'attempt_id' => $attemptId
+        ];
+        
+        header("Location: grade-confirmation.php");
+        exit();
+    } catch (Exception $e) {
+        $conn->rollBack();
+        setFlashMessage('error', 'Failed to save grades');
     }
-
-    // Fetch questions and student answers
-    $stmt = $conn->prepare("
-        SELECT 
-            q.*,
-            sa.answer_text,
-            sa.selected_option_id,
-            sa.is_correct,
-            sa.points_earned,
-            GROUP_CONCAT(
-                CONCAT(mo.id, ':::', mo.option_text, ':::', mo.is_correct)
-                SEPARATOR '|||'
-            ) as options
-        FROM questions q
-        LEFT JOIN student_answers sa ON q.id = sa.question_id AND sa.attempt_id = ?
-        LEFT JOIN mcq_options mo ON q.id = mo.question_id
-        WHERE q.exam_id = ?
-        GROUP BY q.id
-        ORDER BY q.question_order, q.order_num
-    ");
-    $stmt->execute([$attempt_id, $attempt['exam_id']]);
-    $questions = $stmt->fetchAll();
-
-} catch (Exception $e) {
-    setFlashMessage('error', $e->getMessage());
-    header('Location: dashboard.php');
-    exit;
 }
 ?>
 
@@ -76,7 +130,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Attempt - <?php echo SITE_NAME; ?></title>
+    <title>Grade Exam - <?= htmlspecialchars($attempt['exam_title']) ?></title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         :root {
@@ -86,23 +140,8 @@ try {
             --danger-color: #e74c3c;
             --warning-color: #f1c40f;
             --light-color: #ecf0f1;
-            --dark-color: #2c3e50;
-            --border-radius: 8px;
-            --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            background-color: #f5f6fa;
-            color: var(--dark-color);
-            padding-bottom: 40px;
+            --text-dark: #2c3e50;
+            --text-light: #95a5a6;
         }
 
         .container {
@@ -111,307 +150,311 @@ try {
             padding: 20px;
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .back-btn, .pdf-btn, .print-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border: none;
-            border-radius: var(--border-radius);
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .back-btn {
-            background-color: var(--secondary-color);
-        }
-
-        .pdf-btn {
-            background-color: var(--danger-color);
-        }
-
-        .print-btn {
-            background-color: var(--success-color);
-        }
-
-        .back-btn:hover, .pdf-btn:hover, .print-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .attempt-header {
+        .header {
             background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: var(--box-shadow);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .attempt-header h2 {
-            color: var(--primary-color);
+        .header h1 {
+            color: var(--text-dark);
             margin-bottom: 20px;
-            font-size: 1.8rem;
+            font-size: 2em;
         }
 
-        .attempt-meta {
+        .student-info {
+            background: var(--light-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
         }
 
-        .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px;
-            background: var(--light-color);
-            border-radius: var(--border-radius);
+        .info-item {
+            text-align: center;
         }
 
-        .meta-item i {
-            font-size: 1.5rem;
-            color: var(--secondary-color);
+        .info-label {
+            color: var(--text-light);
+            font-size: 0.9em;
+            margin-bottom: 5px;
         }
 
-        .score-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            margin-left: 10px;
-        }
-
-        .passed {
-            background-color: var(--success-color);
-            color: white;
-        }
-
-        .failed {
-            background-color: var(--danger-color);
-            color: white;
-        }
-
-        .questions-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .question-card {
-            background: white;
-            border-radius: var(--border-radius);
-            padding: 25px;
-            box-shadow: var(--box-shadow);
-        }
-
-        .question-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid var(--light-color);
-        }
-
-        .question-header h3 {
-            color: var(--primary-color);
-            font-size: 1.2rem;
-        }
-
-        .question-points {
-            background: var(--light-color);
-            padding: 5px 10px;
-            border-radius: var(--border-radius);
-            font-size: 0.9rem;
+        .info-value {
+            color: var(--text-dark);
+            font-size: 1.2em;
             font-weight: 500;
         }
 
-        .options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 15px;
+        .question {
+            background: white;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .option-item {
+        .question-text {
+            font-size: 1.2em;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-color);
+        }
+
+        .answer {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .option {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 12px;
-            border-radius: var(--border-radius);
-            background: var(--light-color);
-            transition: all 0.3s ease;
+            gap: 12px;
         }
 
-        .option-item.correct {
-            background-color: rgba(46, 204, 113, 0.1);
+        .correct-option {
+            background: rgba(46, 204, 113, 0.1);
             border: 1px solid var(--success-color);
         }
 
-        .option-item.incorrect {
-            background-color: rgba(231, 76, 60, 0.1);
-            border: 1px solid var(--danger-color);
+        .selected-option {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid var(--secondary-color);
         }
 
-        .option-item i {
-            font-size: 1.2rem;
+        .points {
+            font-weight: 500;
+            color: var(--primary-color);
         }
 
-        @media print {
-            .action-buttons {
-                display: none;
-            }
-
-            body {
-                background: white;
-            }
-
-            .container {
-                padding: 0;
-            }
-
-            .attempt-header, .question-card {
-                box-shadow: none;
-                border: 1px solid #ddd;
-            }
-
-            .question-card {
-                page-break-inside: avoid;
-            }
+        .feedback {
+            margin-top: 15px;
+            padding: 10px;
+            border-left: 3px solid var(--secondary-color);
+            background: rgba(52, 152, 219, 0.1);
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: opacity 0.2s ease;
+        }
 
-            .attempt-meta {
-                grid-template-columns: 1fr;
-            }
+        .grading {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid var(--light-color);
+        }
 
-            .action-buttons {
-                flex-direction: column;
-            }
+        .points-input {
+            width: 100px;
+            padding: 8px;
+            border: 1px solid var(--light-color);
+            border-radius: 4px;
+        }
 
-            .question-header {
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
-            }
+        .feedback-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--light-color);
+            border-radius: 4px;
+            margin-top: 10px;
+            resize: vertical;
+        }
+
+        .final-grade {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .btn-submit {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .publish-controls {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .publish-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .publish-checkbox input {
+            width: 18px;
+            height: 18px;
+        }
+
+        .grade-status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .grade-status.published {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .grade-status.draft {
+            background: var(--warning-color);
+            color: var(--text-dark);
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+        }
+
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="action-buttons">
-            <a href="view-exam.php?id=<?php echo $attempt['exam_id']; ?>" class="back-btn">
-                <i class='bx bx-arrow-back'></i> Back to Exam
-            </a>
-            <a href="?id=<?php echo $attempt_id; ?>&format=pdf" class="pdf-btn">
-                <i class='bx bxs-file-pdf'></i> Download PDF
-            </a>
-            <button onclick="window.print()" class="print-btn">
-                <i class='bx bx-printer'></i> Print Report
-            </button>
-        </div>
+        <?php include '../includes/teacher-nav.php'; ?>
 
-        <div class="attempt-header">
-            <h2><?php echo htmlspecialchars($attempt['exam_title']); ?></h2>
-            <div class="attempt-meta">
-                <div class="meta-item">
-                    <i class='bx bx-user'></i>
-                    <span>Student: <?php echo htmlspecialchars($attempt['student_name']); ?></span>
+        <div class="header">
+            <h1><?= htmlspecialchars($attempt['exam_title']) ?></h1>
+            <div class="student-info">
+                <div class="info-item">
+                    <div class="info-label">Student</div>
+                    <div class="info-value"><?= htmlspecialchars($attempt['student_name']) ?></div>
                 </div>
-                <div class="meta-item">
-                    <i class='bx bx-book'></i>
-                    <span>Class: <?php echo htmlspecialchars($attempt['classroom_name']); ?></span>
+                <div class="info-item">
+                    <div class="info-label">Class</div>
+                    <div class="info-value"><?= htmlspecialchars($attempt['classroom_name']) ?></div>
                 </div>
-                <div class="meta-item">
-                    <i class='bx bx-time'></i>
-                    <span>Started: <?php echo date('M j, Y g:i A', strtotime($attempt['start_time'])); ?></span>
+                <div class="info-item">
+                    <div class="info-label">Score</div>
+                    <div class="info-value">
+                        <?= number_format(calculatePoints($attempt['score'], $attempt['total_points']), 1) ?>/<?= $attempt['total_points'] ?>
+                        <small class="percentage">(<?= number_format($attempt['score'], 1) ?>%)</small>
+                    </div>
                 </div>
-                <div class="meta-item">
-                    <i class='bx bx-check-circle'></i>
-                    <span>Completed: <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?></span>
-                </div>
-                <div class="meta-item">
-                    <i class='bx bx-trophy'></i>
-                    <span>Score: <?php echo number_format($attempt['score'], 1); ?>%</span>
-                    <span class="score-badge <?php echo ($attempt['score'] >= $attempt['passing_score']) ? 'passed' : 'failed'; ?>">
-                        <?php echo ($attempt['score'] >= $attempt['passing_score']) ? 'PASSED' : 'FAILED'; ?>
-                    </span>
+                <div class="info-item">
+                    <div class="info-label">Submitted</div>
+                    <div class="info-value"><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></div>
                 </div>
             </div>
+            <a href="view-exam.php?id=<?= $attempt['exam_id'] ?>" class="btn">
+                <i class='bx bx-arrow-back'></i> Back to Results
+            </a>
         </div>
 
-        <div class="questions-container">
-            <?php foreach ($questions as $index => $question): ?>
-                <div class="question-card">
-                    <div class="question-header">
-                        <h3>Question <?php echo $index + 1; ?></h3>
-                        <span class="question-points">
-                            <?php echo $question['points_earned'] ?? 0; ?>/<?php echo $question['points']; ?> points
-                        </span>
-                    </div>
-                    
-                    <p><?php echo htmlspecialchars($question['question_text']); ?></p>
+        <?php if ($flash = getFlashMessage()): ?>
+            <div class="alert alert-<?= $flash['type'] ?>">
+                <?= $flash['message'] ?>
+            </div>
+        <?php endif; ?>
 
-                    <div class="options-list">
-                        <?php if ($question['question_type'] === 'mcq'): ?>
-                            <?php 
-                            $options = explode('|||', $question['options']);
-                            foreach ($options as $option):
-                                list($option_id, $option_text, $is_correct) = explode(':::', $option);
-                                $is_selected = $question['selected_option_id'] == $option_id;
-                                $class = 'option-item';
-                                if ($is_selected) {
-                                    $class .= $is_correct ? ' correct' : ' incorrect';
-                                } elseif ($is_correct) {
-                                    $class .= ' correct';
-                                }
-                            ?>
-                                <div class="<?php echo $class; ?>">
-                                    <i class='bx <?php echo $is_selected ? 'bx-radio-circle-marked' : 'bx-radio-circle'; ?>'></i>
-                                    <?php echo htmlspecialchars($option_text); ?>
-                                    <?php if ($is_correct): ?>
-                                        <i class='bx bx-check' style="color: var(--success-color);"></i>
-                                    <?php endif; ?>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php elseif ($question['question_type'] === 'true_false'): ?>
-                            <?php
-                            $selected_answer = $question['answer_text'];
-                            $correct_answer = $question['correct_answer'];
-                            ?>
-                            <div class="option-item <?php echo $selected_answer === 'true' ? ($question['is_correct'] ? 'correct' : 'incorrect') : ''; ?>">
-                                <i class='bx <?php echo $selected_answer === 'true' ? 'bx-radio-circle-marked' : 'bx-radio-circle'; ?>'></i>
-                                True
-                                <?php if ($correct_answer === 'true'): ?>
-                                    <i class='bx bx-check' style="color: var(--success-color);"></i>
-                                <?php endif; ?>
-                            </div>
-                            <div class="option-item <?php echo $selected_answer === 'false' ? ($question['is_correct'] ? 'correct' : 'incorrect') : ''; ?>">
-                                <i class='bx <?php echo $selected_answer === 'false' ? 'bx-radio-circle-marked' : 'bx-radio-circle'; ?>'></i>
-                                False
-                                <?php if ($correct_answer === 'false'): ?>
-                                    <i class='bx bx-check' style="color: var(--success-color);"></i>
-                                <?php endif; ?>
-                            </div>
+        <form method="POST">
+            <?php foreach ($answers as $index => $answer): ?>
+                <div class="question">
+                    <h3>Question <?= $index + 1 ?></h3>
+                    <p><?= htmlspecialchars($answer['question_text']) ?></p>
+                    
+                    <div class="answer">
+                        <?php if ($answer['selected_option']): ?>
+                            Selected: <?= htmlspecialchars($answer['selected_option']) ?>
+                        <?php else: ?>
+                            <?= nl2br(htmlspecialchars($answer['answer_text'])) ?>
                         <?php endif; ?>
+                    </div>
+
+                    <div class="grading">
+                        <label>
+                            Points (max <?= $answer['max_points'] ?>):
+                            <input type="number" 
+                                   name="points[<?= $answer['answer_id'] ?>]" 
+                                   min="0" 
+                                   max="<?= $answer['max_points'] ?>" 
+                                   step="0.5"
+                                   value="<?= $answer['points_earned'] ?? '' ?>"
+                                   required>
+                        </label>
+                        <textarea 
+                            name="comments[<?= $answer['answer_id'] ?>]" 
+                            placeholder="Feedback for this answer"
+                        ><?= $answer['teacher_comment'] ?? '' ?></textarea>
                     </div>
                 </div>
             <?php endforeach; ?>
-        </div>
+
+            <div class="final-grade">
+                <h3>Final Grade</h3>
+                <div>
+                    <label>
+                        Final Score (%):
+                        <input type="number" 
+                               name="final_score" 
+                               class="points-input"
+                               min="0" 
+                               max="100" 
+                               step="0.1"
+                               value="<?= $attempt['score'] ?? '' ?>"
+                               required>
+                    </label>
+                </div>
+                <div>
+                    <label>
+                        Overall Feedback:
+                        <textarea name="overall_feedback" 
+                                  class="feedback-input"
+                                  placeholder="Add overall feedback for the student"><?= $attempt['teacher_feedback'] ?? '' ?></textarea>
+                    </label>
+                </div>
+            </div>
+
+            <div class="publish-controls">
+                <label class="publish-checkbox">
+                    <input type="checkbox" name="publish" value="1" 
+                           <?= $attempt['published'] ? 'checked' : '' ?>>
+                    Make grade visible to student
+                </label>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class='bx bx-save'></i> Save Grades
+            </button>
+        </form>
     </div>
 </body>
 </html>

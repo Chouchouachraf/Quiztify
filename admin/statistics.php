@@ -6,6 +6,11 @@ require_once '../includes/db.php';
 
 checkRole('admin');
 
+// Add helper function at the top
+function calculatePoints($percentage, $total_points) {
+    return ($percentage / 100) * $total_points;
+}
+
 try {
     $conn = getDBConnection();
     
@@ -24,6 +29,7 @@ try {
     $exam_stats = $conn->query("
         SELECT 
             e.title,
+            e.total_points,
             COUNT(ea.id) as attempt_count,
             AVG(ea.score) as avg_score,
             MIN(ea.score) as min_score,
@@ -232,7 +238,13 @@ try {
                 </div>
                 <div class="stat-card">
                     <h3>Average Score</h3>
-                    <p class="stat-number"><?php echo number_format($stats['avg_score'], 2); ?>%</p>
+                    <p class="stat-number">
+                        <?php 
+                        $avgPoints = calculatePoints($stats['avg_score'], 100);
+                        echo number_format($avgPoints, 1) . '/100';
+                        ?>
+                        <small class="percentage">(<?php echo number_format($stats['avg_score'], 1); ?>%)</small>
+                    </p>
                 </div>
             </div>
 
@@ -258,9 +270,27 @@ try {
                             <tr>
                                 <td><?php echo htmlspecialchars($exam['title']); ?></td>
                                 <td><?php echo $exam['attempt_count']; ?></td>
-                                <td><?php echo number_format($exam['avg_score'], 2); ?>%</td>
-                                <td><?php echo number_format($exam['min_score'], 2); ?>%</td>
-                                <td><?php echo number_format($exam['max_score'], 2); ?>%</td>
+                                <td>
+                                    <?php 
+                                    $avgPoints = calculatePoints($exam['avg_score'], $exam['total_points']);
+                                    echo number_format($avgPoints, 1) . '/' . $exam['total_points'];
+                                    ?>
+                                    <small class="percentage">(<?php echo number_format($exam['avg_score'], 1); ?>%)</small>
+                                </td>
+                                <td>
+                                    <?php 
+                                    $minPoints = calculatePoints($exam['min_score'], $exam['total_points']);
+                                    echo number_format($minPoints, 1) . '/' . $exam['total_points'];
+                                    ?>
+                                    <small class="percentage">(<?php echo number_format($exam['min_score'], 1); ?>%)</small>
+                                </td>
+                                <td>
+                                    <?php 
+                                    $maxPoints = calculatePoints($exam['max_score'], $exam['total_points']);
+                                    echo number_format($maxPoints, 1) . '/' . $exam['total_points'];
+                                    ?>
+                                    <small class="percentage">(<?php echo number_format($exam['max_score'], 1); ?>%)</small>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

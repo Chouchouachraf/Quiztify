@@ -34,7 +34,12 @@ try {
     
     // Get recent exam attempts
     $recent_attempts = $conn->query("
-        SELECT ea.*, u.username, u.full_name, e.title as exam_title
+        SELECT 
+            ea.*, 
+            u.username, 
+            u.full_name, 
+            e.title as exam_title,
+            e.total_points
         FROM exam_attempts ea
         JOIN users u ON ea.student_id = u.id
         JOIN exams e ON ea.exam_id = e.id
@@ -44,6 +49,11 @@ try {
     
 } catch(PDOException $e) {
     die("Error: " . $e->getMessage());
+}
+
+// Add helper function
+function calculatePoints($percentage, $total_points) {
+    return ($percentage / 100) * $total_points;
 }
 ?>
 
@@ -255,7 +265,17 @@ try {
                             <td><?php echo htmlspecialchars($attempt['exam_title']); ?></td>
                             <td><?php echo date('M d, Y H:i', strtotime($attempt['start_time'])); ?></td>
                             <td><?php echo $attempt['is_completed'] ? 'Completed' : 'In Progress'; ?></td>
-                            <td><?php echo $attempt['score'] ?? 'N/A'; ?></td>
+                            <td>
+                                <?php if (isset($attempt['score'])): ?>
+                                    <?php 
+                                    $points = calculatePoints($attempt['score'], $attempt['total_points']);
+                                    echo number_format($points, 1) . '/' . $attempt['total_points'];
+                                    ?>
+                                    <small class="percentage">(<?php echo number_format($attempt['score'], 1); ?>%)</small>
+                                <?php else: ?>
+                                    N/A
+                                <?php endif; ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>

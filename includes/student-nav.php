@@ -1,83 +1,172 @@
-<nav class="navbar">
-    <div class="nav-brand">
-        <a href="dashboard.php">Quiztify</a>
-    </div>
-    <ul class="nav-links">
-        <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-        <li><a href="available-exams.php"><i class="fas fa-book"></i> Available Exams</a></li>
-        <li><a href="my-results.php"><i class="fas fa-chart-bar"></i> My Results</a></li>
-        <li>
-    <a href="../logout.php" class="logout-btn" onclick="return confirm('Are you sure you want to log out?')">
-        <i class="fas fa-sign-out-alt"></i> Logout
-    </a>
-</li>
-    </ul>
-</nav>
+<?php
+// Get current page for active state
+$current_page = basename($_SERVER['PHP_SELF']);
+
+// Get user data from session
+$userInitials = isset($_SESSION['full_name']) ? strtoupper(substr($_SESSION['full_name'], 0, 2)) : 'S';
+$userName = $_SESSION['full_name'] ?? 'Student';
+?>
 
 <style>
     .navbar {
-        background: #2c3e50;
-        padding: 1rem;
+        background: white;
+        padding: 15px 0;
+        margin-bottom: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-container {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        padding: 0 20px;
+        max-width: 1200px;
+        margin: 0 auto;
     }
 
-    .nav-brand a {
-        color: white;
-        font-size: 1.5rem;
+    .nav-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
         text-decoration: none;
+        color: #2c3e50;
+        font-size: 1.5rem;
         font-weight: bold;
     }
 
-    .nav-links {
-        list-style: none;
-        display: flex;
-        gap: 20px;
-        margin: 0;
-        padding: 0;
+    .nav-brand i {
+        color: #3498db;
     }
 
-    .nav-links li a {
-        color: #ecf0f1;
+    .nav-links {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+    }
+
+    .nav-link {
         text-decoration: none;
-        padding: 8px 12px;
-        border-radius: 4px;
-        transition: background 0.3s;
+        color: #666;
+        padding: 8px 16px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .nav-link:hover {
+        background: #f8f9fa;
+        color: #3498db;
+    }
+
+    .nav-link.active {
+        background: #3498db;
+        color: white;
+    }
+
+    .nav-link i {
+        font-size: 1.1rem;
+    }
+
+    .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .user-avatar {
+        width: 35px;
+        height: 35px;
+        background: #3498db;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+    }
+
+    .logout-btn {
+        padding: 8px 16px;
+        border: none;
+        background: #e74c3c;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
         display: flex;
         align-items: center;
         gap: 5px;
     }
 
-    .nav-links li a:hover {
-        background: #34495e;
-    }
-
-    .logout-btn {
-        background: #e74c3c;
-        color: white;
-    }
-
     .logout-btn:hover {
-        background: #c0392b !important;
+        background: #c0392b;
     }
 
     @media (max-width: 768px) {
-        .navbar {
-            flex-direction: column;
-            gap: 10px;
-        }
-
         .nav-links {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
             flex-direction: column;
-            width: 100%;
-            text-align: center;
+            padding: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        .nav-links li a {
+        .nav-links.show {
+            display: flex;
+        }
+
+        .mobile-menu {
             display: block;
-            padding: 10px;
         }
     }
 </style>
+
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="dashboard.php" class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            QuizTify
+        </a>
+
+        <div class="nav-links">
+            <a href="dashboard.php" class="nav-link <?php echo $current_page === 'dashboard.php' ? 'active' : ''; ?>">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+            <a href="available-exams.php" class="nav-link <?php echo $current_page === 'available-exams.php' ? 'active' : ''; ?>">
+                <i class="fas fa-book"></i>
+                Available Exams
+            </a>
+            <a href="my-results.php" class="nav-link <?php echo $current_page === 'my-results.php' ? 'active' : ''; ?>">
+                <i class="fas fa-chart-bar"></i>
+                My Results
+            </a>
+        </div>
+
+        <div class="user-menu">
+            <div class="user-avatar">
+                <?php echo $userInitials; ?>
+            </div>
+            <a href="../logout.php" class="logout-btn" onclick="return confirm('Are you sure you want to log out?')">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<script>
+    // Add mobile menu toggle functionality if needed
+    function toggleMobileMenu() {
+        const navLinks = document.querySelector('.nav-links');
+        navLinks.classList.toggle('show');
+    }
+</script>
