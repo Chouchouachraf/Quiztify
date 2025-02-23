@@ -124,6 +124,29 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             display: block;
         }
     }
+
+    .nav-link[href="exams.php"] {
+        color: <?php echo in_array($current_page, ['exams.php', 'view-exam.php', 'view-attempt.php']) ? 'white' : '#666'; ?>;
+        background: <?php echo in_array($current_page, ['exams.php', 'view-exam.php', 'view-attempt.php']) ? '#3498db' : 'transparent'; ?>;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        color: #666;
+    }
+
+    .breadcrumb a {
+        color: #3498db;
+        text-decoration: none;
+    }
+
+    .breadcrumb i {
+        font-size: 12px;
+        color: #95a5a6;
+    }
 </style>
 
 <nav class="navbar">
@@ -138,7 +161,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
                 <i class="fas fa-home"></i>
                 Dashboard
             </a>
-            <a href="exams.php" class="nav-link <?php echo $current_page === 'exams.php' ? 'active' : ''; ?>">
+            <a href="exams.php" class="nav-link <?php echo in_array($current_page, ['exams.php', 'view-exam.php', 'view-attempt.php']) ? 'active' : ''; ?>">
                 <i class="fas fa-file-alt"></i>
                 Exams
             </a>

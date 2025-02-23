@@ -353,3 +353,13 @@ function displayFlashMessages() {
         unset($_SESSION['flash_messages']);
     }
 }
+
+function formatDateTime($dateTime) {
+    try {
+        $date = new DateTime($dateTime);
+        return $date->format('M d, Y h:i A'); // Example: Jan 01, 2024 02:30 PM
+    } catch (Exception $e) {
+        error_log("Error formatting date: " . $e->getMessage());
+        return 'Invalid date';
+    }
+}

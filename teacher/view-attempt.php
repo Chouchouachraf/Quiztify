@@ -351,6 +351,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <?php include '../includes/teacher-nav.php'; ?>
 
+        <div class="breadcrumb">
+            <a href="dashboard.php">Dashboard</a>
+            <i class="fas fa-chevron-right"></i>
+            <a href="exams.php">Exams</a>
+            <i class="fas fa-chevron-right"></i>
+            <a href="view-exam.php?id=<?php echo $attempt['exam_id']; ?>"><?php echo htmlspecialchars($attempt['exam_title']); ?></a>
+            <i class="fas fa-chevron-right"></i>
+            <span><?php echo htmlspecialchars($attempt['student_name']); ?>'s Attempt</span>
+        </div>
+
         <div class="header">
             <h1><?= htmlspecialchars($attempt['exam_title']) ?></h1>
             <div class="student-info">
@@ -374,8 +384,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="info-value"><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></div>
                 </div>
             </div>
-            <a href="view-exam.php?id=<?= $attempt['exam_id'] ?>" class="btn">
-                <i class='bx bx-arrow-back'></i> Back to Results
+            <a href="view-exam.php?id=<?php echo $attempt['exam_id']; ?>" class="btn btn-secondary">
+                <i class='bx bx-arrow-back'></i> Back to Exam Results
             </a>
         </div>
 

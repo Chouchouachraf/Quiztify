@@ -8,6 +8,10 @@ class ExamManager {
         $this->userId = $userId;
     }
 
+    public function test() {
+        return "ExamManager is working";
+    }
+
     public function startExam($examId) {
         try {
             $this->conn->beginTransaction();
@@ -156,6 +160,70 @@ class ExamManager {
             $this->conn->rollBack();
             error_log("Error in completeAttempt: " . $e->getMessage());
             throw $e;
+        }
+    }
+
+    public function getCompletedExams() {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT 
+                    e.*,
+                    u.full_name as teacher_name,
+                    c.name as classroom_name,
+                    ea.score,
+                    ea.end_time as completion_time,
+                    ea.id as attempt_id
+                FROM exams e
+                JOIN users u ON e.created_by = u.id
+                JOIN exam_classrooms ec ON e.id = ec.exam_id
+                JOIN classrooms c ON ec.classroom_id = c.id
+                JOIN exam_attempts ea ON e.id = ea.exam_id
+                WHERE ea.student_id = ?
+                AND ea.is_completed = 1
+                ORDER BY ea.end_time DESC
+            ");
+            
+            $stmt->execute([$this->userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error in getCompletedExams: " . $e->getMessage());
+            throw new Exception("Failed to fetch completed exams");
+        }
+    }
+
+    public function getAvailableExams() {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT 
+                    e.*,
+                    u.full_name as teacher_name,
+                    c.name as classroom_name,
+                    CASE 
+                        WHEN NOW() < e.start_date THEN 'upcoming'
+                        WHEN NOW() BETWEEN e.start_date AND e.end_date THEN 'active'
+                        ELSE 'expired'
+                    END as status
+                FROM exams e
+                JOIN users u ON e.created_by = u.id
+                JOIN exam_classrooms ec ON e.id = ec.exam_id
+                JOIN classrooms c ON ec.classroom_id = c.id
+                JOIN classroom_students cs ON c.id = cs.classroom_id
+                LEFT JOIN exam_attempts ea ON e.id = ea.exam_id 
+                    AND ea.student_id = ? 
+                    AND ea.is_completed = 1
+                WHERE cs.student_id = ?
+                AND e.is_published = 1
+                AND ea.id IS NULL
+                ORDER BY e.start_date ASC
+            ");
+            
+            $stmt->execute([$this->userId, $this->userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error in getAvailableExams: " . $e->getMessage());
+            throw new Exception("Failed to fetch available exams");
         }
     }
 }

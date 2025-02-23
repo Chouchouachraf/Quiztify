@@ -434,6 +434,29 @@ CREATE TABLE `user_preferences` (
 INSERT INTO `user_preferences` (`id`, `user_id`, `email_notifications`, `created_at`, `updated_at`) VALUES
 (1, 2, 1, '2025-02-13 14:51:46', '2025-02-13 14:51:46');
 
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `exam_attempt_logs`
+--
+
+CREATE TABLE `exam_attempt_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `attempt_id` int(11) NOT NULL,
+  `exam_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `event_type` varchar(50) NOT NULL,
+  `details` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `attempt_id` (`attempt_id`),
+  KEY `exam_id` (`exam_id`),
+  KEY `student_id` (`student_id`),
+  CONSTRAINT `exam_attempt_logs_ibfk_1` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`),
+  CONSTRAINT `exam_attempt_logs_ibfk_2` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`),
+  CONSTRAINT `exam_attempt_logs_ibfk_3` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Index pour les tables déchargées
 --
@@ -569,182 +592,4 @@ ALTER TABLE `classrooms`
 -- AUTO_INCREMENT pour la table `classroom_students`
 --
 ALTER TABLE `classroom_students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT pour la table `exams`
---
-ALTER TABLE `exams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
-
---
--- AUTO_INCREMENT pour la table `exam_attempts`
---
-ALTER TABLE `exam_attempts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
-
---
--- AUTO_INCREMENT pour la table `exam_classrooms`
---
-ALTER TABLE `exam_classrooms`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
--- AUTO_INCREMENT pour la table `exam_teachers`
---
-ALTER TABLE `exam_teachers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `grades`
---
-ALTER TABLE `grades`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT pour la table `mcq_options`
---
-ALTER TABLE `mcq_options`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=55;
-
---
--- AUTO_INCREMENT pour la table `questions`
---
-ALTER TABLE `questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
-
---
--- AUTO_INCREMENT pour la table `remember_tokens`
---
-ALTER TABLE `remember_tokens`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=34;
-
---
--- AUTO_INCREMENT pour la table `student_answers`
---
-ALTER TABLE `student_answers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
-
---
--- AUTO_INCREMENT pour la table `users`
---
-ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
-
---
--- AUTO_INCREMENT pour la table `user_activity_logs`
---
-ALTER TABLE `user_activity_logs`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
-
---
--- AUTO_INCREMENT pour la table `user_preferences`
---
-ALTER TABLE `user_preferences`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
-
---
--- Contraintes pour les tables déchargées
---
-
---
--- Contraintes pour la table `classrooms`
---
-ALTER TABLE `classrooms`
-  ADD CONSTRAINT `classrooms_ibfk_1` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `classroom_students`
---
-ALTER TABLE `classroom_students`
-  ADD CONSTRAINT `classroom_students_ibfk_1` FOREIGN KEY (`classroom_id`) REFERENCES `classrooms` (`id`),
-  ADD CONSTRAINT `classroom_students_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `exams`
---
-ALTER TABLE `exams`
-  ADD CONSTRAINT `exams_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `exam_attempts`
---
-ALTER TABLE `exam_attempts`
-  ADD CONSTRAINT `exam_attempts_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`),
-  ADD CONSTRAINT `exam_attempts_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`),
-  ADD CONSTRAINT `fk_exam` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `exam_classrooms`
---
-ALTER TABLE `exam_classrooms`
-  ADD CONSTRAINT `exam_classrooms_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `exam_classrooms_ibfk_2` FOREIGN KEY (`classroom_id`) REFERENCES `classrooms` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `exam_teachers`
---
-ALTER TABLE `exam_teachers`
-  ADD CONSTRAINT `exam_teachers_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `exam_teachers_ibfk_2` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `grades`
---
-ALTER TABLE `grades`
-  ADD CONSTRAINT `grades_ibfk_1` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `grades_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `grades_ibfk_3` FOREIGN KEY (`teacher_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
-
---
--- Contraintes pour la table `mcq_options`
---
-ALTER TABLE `mcq_options`
-  ADD CONSTRAINT `mcq_options_ibfk_1` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`);
-
---
--- Contraintes pour la table `questions`
---
-ALTER TABLE `questions`
-  ADD CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`);
-
---
--- Contraintes pour la table `remember_tokens`
---
-ALTER TABLE `remember_tokens`
-  ADD CONSTRAINT `remember_tokens_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `student_answers`
---
-ALTER TABLE `student_answers`
-  ADD CONSTRAINT `fk_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_question` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `student_answers_ibfk_1` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`),
-  ADD CONSTRAINT `student_answers_ibfk_2` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`),
-  ADD CONSTRAINT `student_answers_ibfk_3` FOREIGN KEY (`selected_option_id`) REFERENCES `mcq_options` (`id`),
-  ADD CONSTRAINT `student_answers_ibfk_4` FOREIGN KEY (`graded_by`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `users`
---
-ALTER TABLE `users`
-  ADD CONSTRAINT `fk_user_classroom` FOREIGN KEY (`classroom_id`) REFERENCES `classrooms` (`id`) ON DELETE SET NULL;
-
---
--- Contraintes pour la table `user_activity_logs`
---
-ALTER TABLE `user_activity_logs`
-  ADD CONSTRAINT `user_activity_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-
---
--- Contraintes pour la table `user_preferences`
---
-ALTER TABLE `user_preferences`
-  ADD CONSTRAINT `user_preferences_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+  MODIFY `

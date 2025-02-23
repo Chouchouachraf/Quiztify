@@ -125,15 +125,56 @@ class ExamManager {
             throw $e;
         }
     }
+
+    public function test() {
+        return "ExamManager is working";
+    }
+
+    public function getCompletedExams() {
+        try {
+            $stmt = $this->conn->prepare("
+                SELECT 
+                    e.*,
+                    u.full_name as teacher_name,
+                    c.name as classroom_name,
+                    ea.score,
+                    ea.end_time as completion_time,
+                    ea.id as attempt_id
+                FROM exams e
+                JOIN users u ON e.created_by = u.id
+                JOIN exam_classrooms ec ON e.id = ec.exam_id
+                JOIN classrooms c ON ec.classroom_id = c.id
+                JOIN exam_attempts ea ON e.id = ea.exam_id
+                WHERE ea.student_id = ?
+                AND ea.is_completed = 1
+                ORDER BY ea.end_time DESC
+            ");
+            
+            $stmt->execute([$this->userId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error in getCompletedExams: " . $e->getMessage());
+            throw new Exception("Failed to fetch completed exams");
+        }
+    }
 }
 
-// Initialize
-$conn = getDBConnection();
-$examManager = new ExamManager($conn, $_SESSION['user_id']);
-
-// Get exams
-$availableExams = $examManager->getAvailableExams();
-$completedExams = $examManager->getCompletedExams();
+try {
+    $conn = getDBConnection();
+    $examManager = new ExamManager($conn, $_SESSION['user_id']);
+    
+    // Test if ExamManager is loaded correctly
+    echo $examManager->test();
+    
+    // Get exams
+    $availableExams = $examManager->getAvailableExams();
+    $completedExams = $examManager->getCompletedExams();
+    
+} catch (Exception $e) {
+    error_log("Error: " . $e->getMessage());
+    echo "Error: " . $e->getMessage();
+}
 
 // Debug code remains unchanged...
 ?>
@@ -316,7 +357,7 @@ $completedExams = $examManager->getCompletedExams();
                                 </div>
                                 <div class="exam-stat-item">
                                     <i class='bx bx-calendar-check'></i>
-                                    <span>Completed: <?php echo formatDateTime($exam['completed_at']); ?></span>
+                                    <span>Completed: <?php echo formatDateTime($exam['completion_time']); ?></span>
                                 </div>
                             </div>
                             
