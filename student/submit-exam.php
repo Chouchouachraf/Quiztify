@@ -33,26 +33,37 @@ try {
         throw new Exception('Invalid attempt or exam already submitted');
     }
 
-    // Check if time is up
-    $startTime = strtotime($attempt['start_time']);
-    $timeLimit = $attempt['duration_minutes'] * 60;
-    $currentTime = time();
-    $timeElapsed = $currentTime - $startTime;
-    $isTimeUp = $timeElapsed >= $timeLimit;
+    // Process answers
+    $processedQuestions = [];
 
-    // Process submission if time is up or auto-submit
-    if ($isTimeUp || isset($_POST['auto_submit'])) {
-        $examManager->completeAttempt($attemptId);
-        
-        // Clear session data
-        unset($_SESSION['current_attempt']);
-        
-        setFlashMessage('success', 'Exam submitted successfully!');
-        header('Location: exams.php');
-        exit;
+    if (isset($_POST['answers'])) {
+        foreach ($_POST['answers'] as $questionId => $answerValue) {
+            if (!in_array($questionId, $processedQuestions)) {
+                $examManager->submitAnswer($attemptId, $questionId, $answerValue);
+                $processedQuestions[] = $questionId;
+            }
+        }
+    }
+    
+    if (isset($_POST['paragraph_answers'])) {
+        foreach ($_POST['paragraph_answers'] as $questionId => $answerText) {
+            if (!in_array($questionId, $processedQuestions)) {
+                $examManager->submitAnswer($attemptId, $questionId, $answerText);
+                $processedQuestions[] = $questionId;
+            }
+        }
+    }
+    
+    if (isset($_POST['code_answers'])) {
+        foreach ($_POST['code_answers'] as $questionId => $answerText) {
+            if (!in_array($questionId, $processedQuestions)) {
+                $examManager->submitAnswer($attemptId, $questionId, $answerText);
+                $processedQuestions[] = $questionId;
+            }
+        }
     }
 
-    // Process normal submission
+    // Mark the attempt as completed
     $examManager->completeAttempt($attemptId);
     
     // Clear session data

@@ -50,7 +50,7 @@ class ExamManager {
     public function submitAnswer($attemptId, $questionId, $answer) {
         try {
             $stmt = $this->conn->prepare("
-                SELECT q.question_type, q.points
+                SELECT q.question_type, q.points, q.correct_answer
                 FROM questions q
                 JOIN exam_attempts ea ON q.exam_id = ea.exam_id
                 WHERE q.id = ? AND ea.id = ? AND ea.student_id = ?
@@ -81,13 +81,14 @@ class ExamManager {
                     break;
 
                 case 'true_false':
-                    $selectedOptionId = $answer ? 1 : 0;
+                    $selectedOptionId = $answer; // This should reference the true/false option in mcq_options
                     $answerText = null;
-                    $isCorrect = $answer == $question['correct_answer'];
+                    $isCorrect = ($selectedOptionId == $question['correct_answer']);
                     $pointsEarned = $isCorrect ? $question['points'] : 0;
                     break;
 
                 case 'open':
+                case 'code':
                     $selectedOptionId = null;
                     $answerText = $answer;
                     $isCorrect = null; // Will be graded by teacher
@@ -101,8 +102,8 @@ class ExamManager {
             // Save the answer
             $stmt = $this->conn->prepare("
                 INSERT INTO student_answers 
-                (attempt_id, question_id, selected_option_id, answer_text, is_correct, points_earned)
-                VALUES (?, ?, ?, ?, ?, ?)
+                (attempt_id, question_id, student_id, answer_type, selected_option_id, answer_text, is_correct, points_earned)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                 selected_option_id = VALUES(selected_option_id),
                 answer_text = VALUES(answer_text),
@@ -113,6 +114,8 @@ class ExamManager {
             return $stmt->execute([
                 $attemptId,
                 $questionId,
+                $this->userId,
+                $question['question_type'],
                 $selectedOptionId,
                 $answerText,
                 $isCorrect,

@@ -139,54 +139,122 @@ try {
     $users = [];
     $total_pages = 1;
 }
+
+// Get user data from session for the navbar
+$userInitials = isset($_SESSION['full_name']) ? strtoupper(substr($_SESSION['full_name'], 0, 2)) : 'A';
+$userName = $_SESSION['full_name'] ?? 'Admin';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Users - <?php echo SITE_NAME; ?></title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #357abd;
-            --background-color: #f5f5f5;
-            --text-color: #333;
-            --danger-color: #dc3545;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --table-header-bg: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 250px;
+            --nav-hover-bg: #f0f0f0;
+            --modal-bg: #ffffff;
+            --input-bg: #ffffff;
+            --input-border: #ddd;
+            --pagination-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+            --card-bg: #2a2a2a;
+            --border-color: #444;
+            --table-header-bg: #333;
+            --sidebar-bg: #222222;
+            --nav-hover-bg: #333333;
+            --modal-bg: #2a2a2a;
+            --input-bg: #333333;
+            --input-border: #555;
+            --pagination-bg: #2a2a2a;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background: var(--background-color);
+            background-color: var(--background-color);
             color: var(--text-color);
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        .dashboard-container {
+            display: flex;
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
             padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .page-header {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            color: var(--secondary-color);
+            font-size: 24px;
+        }
+
+        .logo h2 {
+            color: var(--text-color);
+            font-size: 20px;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            padding: 15px 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
         .page-title {
@@ -194,12 +262,31 @@ try {
             color: var(--text-color);
         }
 
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
         .filters {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
         .filter-form {
@@ -218,21 +305,25 @@ try {
         .filter-group label {
             font-weight: 500;
             min-width: 80px;
+            color: var(--text-color);
         }
 
         .filter-group select,
         .filter-group input {
             padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
             outline: none;
             min-width: 150px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
         }
 
         .btn {
             padding: 8px 16px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 500;
             transition: all 0.3s ease;
@@ -240,11 +331,10 @@ try {
 
         .btn:hover {
             opacity: 0.9;
-            transform: translateY(-1px);
         }
 
         .btn-primary {
-            background: var(--primary-color);
+            background: var(--secondary-color);
             color: white;
         }
 
@@ -259,11 +349,12 @@ try {
         }
 
         .users-table {
-            background: white;
-            border-radius: 8px;
+            background: var(--card-bg);
+            border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            transition: all 0.3s ease;
         }
 
         table {
@@ -274,17 +365,17 @@ try {
         th, td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
         }
 
         th {
-            background: #f8f9fa;
+            background: var(--table-header-bg);
             font-weight: 600;
             color: var(--text-color);
         }
 
         tr:hover {
-            background: #f8f9fa;
+            background: var(--nav-hover-bg);
         }
 
         .role-badge {
@@ -295,13 +386,13 @@ try {
         }
 
         .role-teacher {
-            background: #e3f2fd;
-            color: #1565c0;
+            background: #1f4287;
+            color: white;
         }
 
         .role-student {
-            background: #f3e5f5;
-            color: #7b1fa2;
+            background: #7b1fa2;
+            color: white;
         }
 
         .user-actions {
@@ -321,13 +412,15 @@ try {
         }
 
         .modal-content {
-            background: white;
+            background: var(--modal-bg);
             width: 90%;
             max-width: 500px;
             margin: 50px auto;
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             position: relative;
+            transition: all 0.3s ease;
+            color: var(--text-color);
         }
 
         .modal h2 {
@@ -350,9 +443,12 @@ try {
         .form-group select {
             width: 100%;
             padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid var(--input-border);
+            border-radius: 8px;
             outline: none;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: all 0.3s ease;
         }
 
         .password-field {
@@ -364,7 +460,7 @@ try {
             right: 10px;
             top: 35px;
             cursor: pointer;
-            color: #666;
+            color: var(--text-color);
         }
 
         .pagination {
@@ -376,27 +472,28 @@ try {
 
         .page-link {
             padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--secondary-color);
+            background: var(--pagination-bg);
             text-decoration: none;
             transition: all 0.3s ease;
         }
 
         .page-link:hover {
-            background: var(--primary-color);
+            background: var(--secondary-color);
             color: white;
         }
 
         .page-link.active {
-            background: var(--primary-color);
+            background: var(--secondary-color);
             color: white;
-            border-color: var(--primary-color);
+            border-color: var(--secondary-color);
         }
 
         .flash-message {
             padding: 10px 15px;
-            border-radius: 4px;
+            border-radius: 8px;
             margin-bottom: 20px;
         }
 
@@ -412,186 +509,252 @@ try {
             border: 1px solid #f5c6cb;
         }
 
-        .dashboard-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
-        .sidebar {
-            width: 250px;
-            background: white;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-
-        .main-content {
-            flex: 1;
-            padding: 20px;
-        }
-
         .nav-link {
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 12px 15px;
             color: var(--text-color);
             text-decoration: none;
-            border-radius: 5px;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
         }
 
         .nav-link:hover {
-            background: #f0f0f0;
+            background: var(--nav-hover-bg);
         }
 
         .nav-link i {
-            margin-right: 10px;
+            margin-right: 12px;
+            font-size: 18px;
         }
 
         .nav-link.active {
-            background: var(--primary-color);
+            background: var(--secondary-color);
             color: white;
         }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+        }
+
+        .logout-btn {
+            background: var(--danger-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .filter-form {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .user-menu {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+        /* Light mode table text color */
+table th, table td {
+    color: var(--text-color);
+}
+
+/* Dark mode table text color */
+[data-theme="dark"] table th, [data-theme="dark"] table td {
+    color: var(--text-color);
+}
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="sidebar">
-            <h2 style="margin-bottom: 20px;">Admin Panel</h2>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>QuizTify Admin</h2>
+            </div>
+            
             <nav>
                 <a href="dashboard.php" class="nav-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard
+                    <i class="fas fa-home"></i> Dashboard
                 </a>
                 <a href="users.php" class="nav-link active">
-                    <i class="bi bi-people"></i> Users
+                    <i class="fas fa-users"></i> Users
                 </a>
                 <a href="exams.php" class="nav-link">
-                    <i class="bi bi-file-text"></i> Exams
+                    <i class="fas fa-file-alt"></i> Exams
                 </a>
                 <a href="classrooms.php" class="nav-link">
-                    <i class="bi bi-building"></i> Classrooms
+                    <i class="fas fa-chalkboard"></i> Classrooms
                 </a>
                 <a href="statistics.php" class="nav-link">
-                    <i class="bi bi-graph-up"></i> Statistics
+                    <i class="fas fa-chart-bar"></i> Statistics
                 </a>
-                <a href="../logout.php" class="nav-link">
-                    <i class="bi bi-box-arrow-right"></i> Logout
+                <a href="settings.php" class="nav-link">
+                    <i class="fas fa-cog"></i> Settings
                 </a>
             </nav>
         </div>
+
         <div class="main-content">
-            <div class="container">
-                <div class="page-header">
-                    <h1 class="page-title">Manage Users</h1>
-                    <button class="btn btn-primary" onclick="showAddModal()">
-                        <i class="bi bi-plus-lg"></i> Add New User
+            <div class="header">
+                <h1 class="page-title">Manage Users</h1>
+                
+                <div class="user-menu">
+                    <button id="theme-toggle" class="theme-toggle">
+                        <i class="fas fa-moon"></i> Theme
                     </button>
-                </div>
-
-                <?php if (isset($_SESSION['flash_message'])): ?>
-                    <div class="flash-message flash-<?php echo $_SESSION['flash_type']; ?>">
-                        <?php 
-                            echo $_SESSION['flash_message'];
-                            unset($_SESSION['flash_message']);
-                            unset($_SESSION['flash_type']);
-                        ?>
+                    <div class="user-avatar">
+                        <?php echo $userInitials; ?>
                     </div>
-                <?php endif; ?>
-
-                <div class="filters">
-                    <form method="GET" class="filter-form">
-                        <div class="filter-group">
-                            <label>Role:</label>
-                            <select name="role">
-                                <option value="all" <?php echo $role_filter === 'all' ? 'selected' : ''; ?>>All Roles</option>
-                                <option value="teacher" <?php echo $role_filter === 'teacher' ? 'selected' : ''; ?>>Teachers</option>
-                                <option value="student" <?php echo $role_filter === 'student' ? 'selected' : ''; ?>>Students</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Department:</label>
-                            <select name="department">
-                                <option value="all">All Departments</option>
-                                <?php foreach ($departments as $dept): ?>
-                                    <option value="<?php echo htmlspecialchars($dept); ?>" 
-                                            <?php echo $department_filter === $dept ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($dept); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Search:</label>
-                            <input type="text" name="search" 
-                                   value="<?php echo htmlspecialchars($search); ?>" 
-                                   placeholder="Search users...">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                    </form>
+                    <a href="../logout.php" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
                 </div>
-
-                <div class="users-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Full Name</th>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Department</th>
-                                <th>Classes/Exams</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($users)): ?>
-                                <?php foreach ($users as $user): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($user['full_name']); ?></td>
-                                        <td><?php echo htmlspecialchars($user['username']); ?></td>
-                                        <td><?php echo htmlspecialchars($user['email']); ?></td>
-                                        <td>
-                                            <span class="role-badge role-<?php echo $user['role']; ?>">
-                                                <?php echo ucfirst($user['role']); ?>
-                                            </span>
-                                        </td>
-                                        <td><?php echo htmlspecialchars($user['department'] ?? 'N/A'); ?></td>
-                                        <td>
-                                            <?php if ($user['role'] === 'student'): ?>
-                                                <?php echo htmlspecialchars($user['enrolled_classrooms'] ?? 'No classes'); ?>
-                                            <?php else: ?>
-                                                <?php echo $user['exam_count']; ?> exams created
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="user-actions">
-                                            <button class="btn btn-warning" onclick='showEditModal(<?php echo htmlspecialchars(json_encode($user)); ?>)'>
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-danger" onclick="confirmDelete(<?php echo $user['id']; ?>)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <tr>
-                                    <td colspan="7" style="text-align: center;">No users found</td>
-                                </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <?php if ($total_pages > 1): ?>
-                    <div class="pagination">
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&role=<?php echo urlencode($role_filter); ?>&department=<?php echo urlencode($department_filter); ?>&search=<?php echo urlencode($search); ?>" 
-                               class="page-link <?php echo ($page === $i) ? 'active' : ''; ?>">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                    </div>
-                <?php endif; ?>
             </div>
+
+            <?php if (isset($_SESSION['flash_message'])): ?>
+                <div class="flash-message flash-<?php echo $_SESSION['flash_type']; ?>">
+                    <?php 
+                        echo $_SESSION['flash_message'];
+                        unset($_SESSION['flash_message']);
+                        unset($_SESSION['flash_type']);
+                    ?>
+                </div>
+            <?php endif; ?>
+
+            <div class="filters">
+                <form method="GET" class="filter-form">
+                    <div class="filter-group">
+                        <label>Role:</label>
+                        <select name="role">
+                            <option value="all" <?php echo $role_filter === 'all' ? 'selected' : ''; ?>>All Roles</option>
+                            <option value="teacher" <?php echo $role_filter === 'teacher' ? 'selected' : ''; ?>>Teachers</option>
+                            <option value="student" <?php echo $role_filter === 'student' ? 'selected' : ''; ?>>Students</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Department:</label>
+                        <select name="department">
+                            <option value="all">All Departments</option>
+                            <?php foreach ($departments as $dept): ?>
+                                <option value="<?php echo htmlspecialchars($dept); ?>" 
+                                        <?php echo $department_filter === $dept ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($dept); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" name="search" 
+                               value="<?php echo htmlspecialchars($search); ?>" 
+                               placeholder="Search users...">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </form>
+            </div>
+
+            <div class="users-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Full Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Department</th>
+                            <th>Classes/Exams</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($users)): ?>
+                            <?php foreach ($users as $user): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($user['full_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['username']); ?></td>
+                                    <td><?php echo htmlspecialchars($user['email']); ?></td>
+                                    <td>
+                                        <span class="role-badge role-<?php echo $user['role']; ?>">
+                                            <?php echo ucfirst($user['role']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($user['department'] ?? 'N/A'); ?></td>
+                                    <td>
+                                        <?php if ($user['role'] === 'student'): ?>
+                                            <?php echo htmlspecialchars($user['enrolled_classrooms'] ?? 'No classes'); ?>
+                                        <?php else: ?>
+                                            <?php echo $user['exam_count']; ?> exams created
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="user-actions">
+                                        <button class="btn btn-warning" onclick='showEditModal(<?php echo htmlspecialchars(json_encode($user)); ?>)'>
+                                            <i class="fas fa-pencil-alt"></i>
+                                        </button>
+                                        <button class="btn btn-danger" onclick="confirmDelete(<?php echo $user['id']; ?>)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="7" style="text-align: center;">No users found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination">
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?php echo $i; ?>&role=<?php echo urlencode($role_filter); ?>&department=<?php echo urlencode($department_filter); ?>&search=<?php echo urlencode($search); ?>" 
+                           class="page-link <?php echo ($page === $i) ? 'active' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
+                </div>
+            <?php endif; ?>
+
             <div id="addModal" class="modal">
                 <div class="modal-content">
                     <h2>Add New User</h2>
@@ -612,7 +775,7 @@ try {
                         <div class="form-group password-field">
                             <label>Password</label>
                             <input type="password" name="password" id="add_password" required>
-                            <i class="bi bi-eye password-toggle" onclick="togglePassword('add_password')"></i>
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('add_password')"></i>
                         </div>
                         <div class="form-group">
                             <label>Role</label>
@@ -647,7 +810,7 @@ try {
                         <div class="form-group password-field">
                             <label>New Password (leave blank to keep current)</label>
                             <input type="password" name="new_password" id="edit_password">
-                            <i class="bi bi-eye password-toggle" onclick="togglePassword('edit_password')"></i>
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('edit_password')"></i>
                         </div>
                         <div class="form-group">
                             <label>Role</label>
@@ -669,6 +832,39 @@ try {
     </div>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get theme from localStorage or default to light
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+            
+            // Theme toggle button functionality
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+                
+                // Update icon based on theme
+                const themeIcon = this.querySelector('i');
+                if (newTheme === 'dark') {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+            });
+            
+            // Set correct icon on page load
+            const themeIcon = document.querySelector('#theme-toggle i');
+            if (theme === 'dark') {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        });
+
         function showAddModal() {
             document.getElementById('addModal').style.display = 'block';
         }
@@ -685,7 +881,6 @@ try {
         function hideModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
-
         function confirmDelete(userId) {
             if (confirm('Are you sure you want to delete this user?')) {
                 const form = document.createElement('form');
@@ -727,6 +922,7 @@ try {
                 this.form.submit();
             });
         });
+
     </script>
 </body>
 </html>

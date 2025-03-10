@@ -154,268 +154,55 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Exams - <?php echo SITE_NAME; ?></title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #357abd;
-            --background-color: #f5f5f5;
-            --text-color: #333;
-            --danger-color: #dc3545;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
+            --border-color: #ddd;
+            --table-header-bg: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --sidebar-width: 250px;
+            --nav-hover-bg: #f0f0f0;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+            --card-bg: #2a2a2a;
+            --border-color: #444;
+            --table-header-bg: #333;
+            --sidebar-bg: #222222;
+            --nav-hover-bg: #333333;
         }
 
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Poppins', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
-            background: var(--background-color);
+            background-color: var(--background-color);
             color: var(--text-color);
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .page-title {
-            font-size: 24px;
-            color: var(--text-color);
-        }
-
-        .filters {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .filter-form {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .filter-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .filter-group label {
-            font-weight: 500;
-            min-width: 80px;
-        }
-
-        .filter-group select,
-        .filter-group input {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            outline: none;
-            min-width: 150px;
-        }
-
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
             transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning-color);
-            color: black;
-        }
-
-        .exams-table {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: var(--text-color);
-        }
-
-        tr:hover {
-            background: #f8f9fa;
-        }
-
-        .status-badge {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-
-        .status-published {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .status-draft {
-            background: #fff3e0;
-            color: #ef6c00;
-        }
-
-        .exam-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            border-radius: 8px;
-            position: relative;
-        }
-
-        .modal h2 {
-            margin-bottom: 20px;
-            color: var(--text-color);
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 500;
-            color: var(--text-color);
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            outline: none;
-        }
-
-        .form-group textarea {
-            height: 100px;
-            resize: vertical;
-        }
-
-        .checkbox-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .checkbox-group input {
-            width: auto;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 20px;
-        }
-
-        .page-link {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            color: var(--primary-color);
-            text-decoration: none;
-        }
-
-        .page-link.active {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-        }
-
-        .flash-message {
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-
-        .flash-success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-        }
-
-        .flash-error {
-            background: #ffebee;
-            color: #c62828;
-            border: 1px solid #ffcdd2;
+            line-height: 1.6;
         }
 
         .dashboard-container {
@@ -424,336 +211,549 @@ try {
         }
 
         .sidebar {
-            width: 250px;
-            background: white;
+            width: var(--sidebar-width);
+            background: var(--sidebar-bg);
             padding: 20px;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .logo i {
+            color: var(--secondary-color);
+            font-size: 24px;
+        }
+
+        .logo h2 {
+            color: var(--text-color);
+            font-size: 20px;
         }
 
         .main-content {
             flex: 1;
             padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 24px;
+            color: var(--text-color);
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .recent-activity {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background-color: var(--table-header-bg);
+            font-weight: 600;
+            color: var(--text-color);
         }
 
         .nav-link {
             display: flex;
             align-items: center;
-            padding: 10px;
+            padding: 12px 15px;
             color: var(--text-color);
             text-decoration: none;
-            border-radius: 5px;
-            margin-bottom: 5px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
         }
 
         .nav-link:hover {
-            background: #f0f0f0;
+            background: var(--nav-hover-bg);
         }
 
         .nav-link i {
-            margin-right: 10px;
+            margin-right: 12px;
+            font-size: 18px;
         }
 
         .nav-link.active {
-            background: var(--primary-color);
+            background: var(--secondary-color);
             color: white;
         }
+
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary-color);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: var(--primary-color);
+        }
+
+        .logout-btn {
+            background: var(--danger-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        .percentage {
+            color: var(--text-color);
+            font-size: 0.85em;
+            margin-left: 5px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Light mode table text color */
+table th, table td {
+    color: var(--text-color);
+}
+
+/* Dark mode table text color */
+[data-theme="dark"] table th, [data-theme="dark"] table td {
+    color: var(--text-color);
+}
     </style>
 </head>
 <body>
     <div class="dashboard-container">
         <div class="sidebar">
-            <h2 style="margin-bottom: 20px;">Admin Panel</h2>
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>QuizTify Admin</h2>
+            </div>
+            
             <nav>
                 <a href="dashboard.php" class="nav-link">
-                    <i class="bi bi-speedometer2"></i> Dashboard
+                    <i class="fas fa-home"></i> Dashboard
                 </a>
                 <a href="users.php" class="nav-link">
-                    <i class="bi bi-people"></i> Users
+                    <i class="fas fa-users"></i> Users
                 </a>
                 <a href="exams.php" class="nav-link active">
-                    <i class="bi bi-file-text"></i> Exams
+                    <i class="fas fa-file-alt"></i> Exams
                 </a>
                 <a href="classrooms.php" class="nav-link">
-                    <i class="bi bi-building"></i> Classrooms
+                    <i class="fas fa-chalkboard"></i> Classrooms
                 </a>
                 <a href="statistics.php" class="nav-link">
-                    <i class="bi bi-graph-up"></i> Statistics
+                    <i class="fas fa-chart-bar"></i> Statistics
                 </a>
-                <a href="../logout.php" class="nav-link">
-                    <i class="bi bi-box-arrow-right"></i> Logout
+                <a href="settings.php" class="nav-link">
+                    <i class="fas fa-cog"></i> Settings
                 </a>
             </nav>
         </div>
+
         <div class="main-content">
-            <div class="container">
-                <div class="page-header">
-                    <h1 class="page-title">Manage Exams</h1>
-                    <button class="btn btn-primary" onclick="showAddModal()">
-                        <i class="bi bi-plus"></i> Add New Exam
+            <div class="header">
+                <h1 class="page-title">Manage Exams</h1>
+                
+                <div class="user-menu">
+                    <button id="theme-toggle" class="theme-toggle">
+                        <i class="fas fa-moon"></i> Theme
                     </button>
-                </div>
-
-                <?php if (isset($_SESSION['flash_message'])): ?>
-                    <div class="flash-message flash-<?php echo $_SESSION['flash_type']; ?>">
-                        <?php echo $_SESSION['flash_message']; ?>
+                    <div class="user-avatar">
+                        <?php echo $userInitials; ?>
                     </div>
-                    <?php unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
-                <?php endif; ?>
-
-                <div class="filters">
-                    <form method="GET" class="filter-form">
-                        <div class="filter-group">
-                            <label>Status:</label>
-                            <select name="status">
-                                <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
-                                <option value="published" <?php echo $status_filter === 'published' ? 'selected' : ''; ?>>Published</option>
-                                <option value="draft" <?php echo $status_filter === 'draft' ? 'selected' : ''; ?>>Draft</option>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Teacher:</label>
-                            <select name="teacher">
-                                <option value="all">All Teachers</option>
-                                <?php foreach ($teachers as $teacher): ?>
-                                    <option value="<?php echo $teacher['id']; ?>" 
-                                            <?php echo $teacher_filter == $teacher['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($teacher['full_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="filter-group">
-                            <label>Search:</label>
-                            <input type="text" name="search" 
-                                   value="<?php echo htmlspecialchars($search); ?>" 
-                                   placeholder="Search exams...">
-                        </div>
-                        <button type="submit" class="btn btn-primary">Filter</button>
-                    </form>
+                    <a href="../logout.php" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
                 </div>
+            </div>
 
-                <div class="exams-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Teacher</th>
-                                <th>Duration</th>
-                                <th>Questions</th>
-                                <th>Attempts</th>
-                                <th>Status</th>
-                                <th>Date Range</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (!empty($exams)): ?>
-                                <?php foreach ($exams as $exam): ?>
-                                    <tr>
-                                        <td><?php echo htmlspecialchars($exam['title']); ?></td>
-                                        <td><?php echo htmlspecialchars($exam['teacher_name']); ?></td>
-                                        <td><?php echo $exam['duration_minutes']; ?> minutes</td>
-                                        <td><?php echo $exam['question_count']; ?> questions</td>
-                                        <td><?php echo $exam['attempt_count']; ?> attempts</td>
-                                        <td>
-                                            <span class="status-badge status-<?php echo $exam['is_published'] ? 'published' : 'draft'; ?>">
-                                                <?php echo $exam['is_published'] ? 'Published' : 'Draft'; ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <?php 
-                                            echo date('M d, Y', strtotime($exam['start_date'])) . ' - ' . 
-                                                 date('M d, Y', strtotime($exam['end_date']));
-                                            ?>
-                                        </td>
-                                        <td class="exam-actions">
-                                            <button class="btn btn-warning" onclick='showEditModal(<?php echo htmlspecialchars(json_encode($exam)); ?>)'>
-                                                <i class="bi bi-pencil"></i>
-                                            </button>
-                                            <button class="btn btn-danger" onclick="confirmDelete(<?php echo $exam['id']; ?>)">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php else: ?>
+            <?php if (isset($_SESSION['flash_message'])): ?>
+                <div class="flash-message flash-<?php echo $_SESSION['flash_type']; ?>">
+                    <?php echo $_SESSION['flash_message']; ?>
+                </div>
+                <?php unset($_SESSION['flash_message'], $_SESSION['flash_type']); ?>
+            <?php endif; ?>
+
+            <div class="filters">
+                <form method="GET" class="filter-form">
+                    <div class="filter-group">
+                        <label>Status:</label>
+                        <select name="status">
+                            <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
+                            <option value="published" <?php echo $status_filter === 'published' ? 'selected' : ''; ?>>Published</option>
+                            <option value="draft" <?php echo $status_filter === 'draft' ? 'selected' : ''; ?>>Draft</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Teacher:</label>
+                        <select name="teacher">
+                            <option value="all">All Teachers</option>
+                            <?php foreach ($teachers as $teacher): ?>
+                                <option value="<?php echo $teacher['id']; ?>" 
+                                        <?php echo $teacher_filter == $teacher['id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($teacher['full_name']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" name="search" 
+                               value="<?php echo htmlspecialchars($search); ?>" 
+                               placeholder="Search exams...">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </form>
+            </div>
+
+            <div class="exams-table">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Teacher</th>
+                            <th>Duration</th>
+                            <th>Questions</th>
+                            <th>Attempts</th>
+                            <th>Status</th>
+                            <th>Date Range</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($exams)): ?>
+                            <?php foreach ($exams as $exam): ?>
                                 <tr>
-                                    <td colspan="8" style="text-align: center;">No exams found</td>
+                                    <td><?php echo htmlspecialchars($exam['title']); ?></td>
+                                    <td><?php echo htmlspecialchars($exam['teacher_name']); ?></td>
+                                    <td><?php echo $exam['duration_minutes']; ?> minutes</td>
+                                    <td><?php echo $exam['question_count']; ?> questions</td>
+                                    <td><?php echo $exam['attempt_count']; ?> attempts</td>
+                                    <td>
+                                        <span class="status-badge status-<?php echo $exam['is_published'] ? 'published' : 'draft'; ?>">
+                                            <?php echo $exam['is_published'] ? 'Published' : 'Draft'; ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <?php 
+                                        echo date('M d, Y', strtotime($exam['start_date'])) . ' - ' . 
+                                             date('M d, Y', strtotime($exam['end_date']));
+                                        ?>
+                                    </td>
+                                    <td class="exam-actions">
+                                        <button class="btn btn-warning" onclick='showEditModal(<?php echo htmlspecialchars(json_encode($exam)); ?>)'>
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-danger" onclick="confirmDelete(<?php echo $exam['id']; ?>)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
                                 </tr>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
-
-                <?php if ($total_pages > 1): ?>
-                    <div class="pagination">
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&status=<?php echo urlencode($status_filter); ?>&teacher=<?php echo urlencode($teacher_filter); ?>&search=<?php echo urlencode($search); ?>" 
-                               class="page-link <?php echo ($page === $i) ? 'active' : ''; ?>">
-                                <?php echo $i; ?>
-                            </a>
-                        <?php endfor; ?>
-                    </div>
-                <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="8" style="text-align: center;">No exams found</td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- Add Exam Modal -->
-            <div id="addModal" class="modal">
-                <div class="modal-content">
-                    <h2>Add New Exam</h2>
-                    <form action="" method="POST">
-                        <input type="hidden" name="action" value="add">
-                        <div class="form-group">
-                            <label>Title</label>
-                            <input type="text" name="title" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Teacher</label>
-                            <select name="teacher_id" required>
-                                <?php foreach ($teachers as $teacher): ?>
-                                    <option value="<?php echo $teacher['id']; ?>">
-                                        <?php echo htmlspecialchars($teacher['full_name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (minutes)</label>
-                            <input type="number" name="duration_minutes" required min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Passing Score (%)</label>
-                            <input type="number" name="passing_score" required min="0" max="100">
-                        </div>
-                        <div class="form-group">
-                            <label>Attempts Allowed</label>
-                            <input type="number" name="attempts_allowed" required min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="datetime-local" name="start_date" required>
-                        </div>
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="datetime-local" name="end_date" required>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" name="is_published" id="add_is_published">
-                            <label for="add_is_published">Publish Exam</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Add Exam</button>
-                        <button type="button" class="btn btn-danger" onclick="hideModal('addModal')">Cancel</button>
-                    </form>
+            <?php if ($total_pages > 1): ?>
+                <div class="pagination">
+                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <a href="?page=<?php echo $i; ?>&status=<?php echo urlencode($status_filter); ?>&teacher=<?php echo urlencode($teacher_filter); ?>&search=<?php echo urlencode($search); ?>" 
+                           class="page-link <?php echo ($page === $i) ? 'active' : ''; ?>">
+                            <?php echo $i; ?>
+                        </a>
+                    <?php endfor; ?>
                 </div>
-            </div>
-
-            <!-- Edit Exam Modal -->
-            <div id="editModal" class="modal">
-                <div class="modal-content">
-                    <h2>Edit Exam</h2>
-                    <form action="" method="POST">
-                        <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="exam_id" id="edit_exam_id">
-                        <div class="form-group">
-                            <label>Title</label>
-                            <input type="text" name="title" id="edit_title" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="description" id="edit_description" required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Duration (minutes)</label>
-                            <input type="number" name="duration_minutes" id="edit_duration_minutes" required min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Passing Score (%)</label>
-                            <input type="number" name="passing_score" id="edit_passing_score" required min="0" max="100">
-                        </div>
-                        <div class="form-group">
-                            <label>Attempts Allowed</label>
-                            <input type="number" name="attempts_allowed" id="edit_attempts_allowed" required min="1">
-                        </div>
-                        <div class="form-group">
-                            <label>Start Date</label>
-                            <input type="datetime-local" name="start_date" id="edit_start_date" required>
-                        </div>
-                        <div class="form-group">
-                            <label>End Date</label>
-                            <input type="datetime-local" name="end_date" id="edit_end_date" required>
-                        </div>
-                        <div class="checkbox-group">
-                            <input type="checkbox" name="is_published" id="edit_is_published">
-                            <label for="edit_is_published">Publish Exam</label>
-                        </div>
-                        <button type="submit" class="btn btn-primary">Update Exam</button>
-                        <button type="button" class="btn btn-danger" onclick="hideModal('editModal')">Cancel</button>
-                    </form>
-                </div>
-            </div>
-
-            <script>
-                function showAddModal() {
-                    document.getElementById('addModal').style.display = 'block';
-                }
-
-                function showEditModal(exam) {
-                    document.getElementById('edit_exam_id').value = exam.id;
-                    document.getElementById('edit_title').value = exam.title;
-                    document.getElementById('edit_description').value = exam.description;
-                    document.getElementById('edit_duration_minutes').value = exam.duration_minutes;
-                    document.getElementById('edit_passing_score').value = exam.passing_score;
-                    document.getElementById('edit_attempts_allowed').value = exam.attempts_allowed;
-                    document.getElementById('edit_is_published').checked = exam.is_published == 1;
-                    
-                    // Format datetime for input
-                    document.getElementById('edit_start_date').value = formatDateTime(exam.start_date);
-                    document.getElementById('edit_end_date').value = formatDateTime(exam.end_date);
-                    
-                    document.getElementById('editModal').style.display = 'block';
-                }
-
-                function hideModal(modalId) {
-                    document.getElementById(modalId).style.display = 'none';
-                }
-
-                function confirmDelete(examId) {
-                    if (confirm('Are you sure you want to delete this exam?')) {
-                        const form = document.createElement('form');
-                        form.method = 'POST';
-                        form.innerHTML = `
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="exam_id" value="${examId}">
-                        `;
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                }
-
-                function formatDateTime(dateString) {
-                    const date = new Date(dateString);
-                    return date.toISOString().slice(0, 16);
-                }
-
-                // Close modal when clicking outside
-                window.onclick = function(event) {
-                    if (event.target.className === 'modal') {
-                        event.target.style.display = 'none';
-                    }
-                }
-
-                // Auto-submit form when filters change
-                document.querySelectorAll('.filters select').forEach(element => {
-                    element.addEventListener('change', function() {
-                        this.form.submit();
-                    });
-                });
-            </script>
+            <?php endif; ?>
         </div>
     </div>
+
+    <!-- Add Exam Modal -->
+    <div id="addModal" class="modal">
+        <div class="modal-content">
+            <h2>Add New Exam</h2>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="add">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Teacher</label>
+                    <select name="teacher_id" required>
+                        <?php foreach ($teachers as $teacher): ?>
+                            <option value="<?php echo $teacher['id']; ?>">
+                                <?php echo htmlspecialchars($teacher['full_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes)</label>
+                    <input type="number" name="duration_minutes" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Passing Score (%)</label>
+                    <input type="number" name="passing_score" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Attempts Allowed</label>
+                    <input type="number" name="attempts_allowed" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="datetime-local" name="start_date" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="datetime-local" name="end_date" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" name="is_published" id="add_is_published">
+                    <label for="add_is_published">Publish Exam</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Add Exam</button>
+                <button type="button" class="btn btn-danger" onclick="hideModal('addModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Edit Exam Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Exam</h2>
+            <form action="" method="POST">
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="exam_id" id="edit_exam_id">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" name="title" id="edit_title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="description" id="edit_description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Duration (minutes)</label>
+                    <input type="number" name="duration_minutes" id="edit_duration_minutes" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Passing Score (%)</label>
+                    <input type="number" name="passing_score" id="edit_passing_score" required min="0" max="100">
+                </div>
+                <div class="form-group">
+                    <label>Attempts Allowed</label>
+                    <input type="number" name="attempts_allowed" id="edit_attempts_allowed" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Start Date</label>
+                    <input type="datetime-local" name="start_date" id="edit_start_date" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date</label>
+                    <input type="datetime-local" name="end_date" id="edit_end_date" required>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" name="is_published" id="edit_is_published">
+                    <label for="edit_is_published">Publish Exam</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Update Exam</button>
+                <button type="button" class="btn btn-danger" onclick="hideModal('editModal')">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get theme from localStorage or default to light
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+            
+            // Theme toggle button functionality
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+                
+                // Update icon based on theme
+                const themeIcon = this.querySelector('i');
+                if (newTheme === 'dark') {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+            });
+            
+            // Set correct icon on page load
+            const themeIcon = document.querySelector('#theme-toggle i');
+            if (theme === 'dark') {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+            } else {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+            }
+        });
+
+        function showAddModal() {
+            document.getElementById('addModal').style.display = 'block';
+        }
+
+        function showEditModal(exam) {
+            document.getElementById('edit_exam_id').value = exam.id;
+            document.getElementById('edit_title').value = exam.title;
+            document.getElementById('edit_description').value = exam.description;
+            document.getElementById('edit_duration_minutes').value = exam.duration_minutes;
+            document.getElementById('edit_passing_score').value = exam.passing_score;
+            document.getElementById('edit_attempts_allowed').value = exam.attempts_allowed;
+            document.getElementById('edit_is_published').checked = exam.is_published == 1;
+            
+            // Format datetime for input
+            document.getElementById('edit_start_date').value = formatDateTime(exam.start_date);
+            document.getElementById('edit_end_date').value = formatDateTime(exam.end_date);
+            
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function confirmDelete(examId) {
+            if (confirm('Are you sure you want to delete this exam?')) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="exam_id" value="${examId}">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toISOString().slice(0, 16);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // Auto-submit form when filters change
+        document.querySelectorAll('.filters select').forEach(element => {
+            element.addEventListener('change', function() {
+                this.form.submit();
+            });
+        });
+    </script>
 </body>
 </html>

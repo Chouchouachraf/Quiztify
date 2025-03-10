@@ -124,42 +124,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grade Exam - <?php echo htmlspecialchars($attempt['exam_title']); ?></title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .container { max-width: 1000px; margin: 20px auto; padding: 20px; }
-        .question-card { 
-            background: white; 
-            padding: 20px; 
-            margin: 20px 0; 
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+        }
+
+        .question-card {
+            background: var(--light-color);
+            padding: 20px;
+            margin: 20px 0;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .answer-text { 
-            background: #f8f9fa; 
-            padding: 15px; 
-            border-radius: 4px; 
-            margin: 10px 0; 
+
+        .answer-text {
+            background: var(--background-color);
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
         }
+
         .grading-controls {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--light-color);
         }
+
         .points-input {
             width: 100px;
             padding: 5px;
             margin-right: 10px;
+            background: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--light-color);
+            border-radius: 4px;
         }
+
         .feedback-input {
             width: 100%;
             padding: 10px;
             margin-top: 10px;
+            background: var(--background-color);
+            color: var(--text-color);
+            border: 1px solid var(--light-color);
+            border-radius: 4px;
         }
+
         .submit-section {
-            background: white;
+            background: var(--light-color);
             padding: 20px;
             border-radius: 8px;
             margin-top: 20px;
+        }
+
+        button {
+            background: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: var(--primary-color);
+        }
+
+        label {
+            color: var(--text-color);
+        }
+
+        input[type="checkbox"] {
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -223,5 +304,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+            });
+        });
+    </script>
 </body>
-</html> 
+</html>

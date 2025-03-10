@@ -8,8 +8,32 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
 ?>
 
 <style>
+    :root {
+        --primary-color: #2c3e50;
+        --secondary-color: #3498db;
+        --success-color: #2ecc71;
+        --danger-color: #e74c3c;
+        --warning-color: #f1c40f;
+        --light-color: #ecf0f1;
+        --dark-color: #2c3e50;
+        --background-color: #f5f6fa;
+        --text-color: #2c3e50;
+    }
+
+    [data-theme="dark"] {
+        --background-color: #1a1a1a;
+        --text-color: #ffffff;
+        --primary-color: #2980b9; /* Dark blue primary color */
+        --secondary-color: #3498db; /* Blue secondary color */
+        --success-color: #44bb77;
+        --danger-color: #ff5555;
+        --warning-color: #ffcc00;
+        --light-color: #333333;
+        --dark-color: #ffffff;
+    }
+
     .navbar {
-        background: white;
+        background: var(--background-color);
         padding: 15px 0;
         margin-bottom: 30px;
         border-radius: 15px;
@@ -30,13 +54,13 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
         align-items: center;
         gap: 10px;
         text-decoration: none;
-        color: #2c3e50;
+        color: var(--primary-color);
         font-size: 1.5rem;
         font-weight: bold;
     }
 
     .nav-brand i {
-        color: #3498db;
+        color: var(--secondary-color);
     }
 
     .nav-links {
@@ -47,7 +71,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
 
     .nav-link {
         text-decoration: none;
-        color: #666;
+        color: var(--text-color);
         padding: 8px 16px;
         border-radius: 8px;
         transition: all 0.3s ease;
@@ -57,13 +81,13 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
     }
 
     .nav-link:hover {
-        background: #f8f9fa;
-        color: #3498db;
+        background: var(--light-color);
+        color: var(--secondary-color);
     }
 
     .nav-link.active {
-        background: #3498db;
-        color: white;
+        background: var(--secondary-color);
+        color: var(--light-color);
     }
 
     .nav-link i {
@@ -79,20 +103,20 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
     .user-avatar {
         width: 35px;
         height: 35px;
-        background: #3498db;
+        background: var(--secondary-color);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        color: var(--light-color);
         font-weight: bold;
     }
 
     .logout-btn {
         padding: 8px 16px;
         border: none;
-        background: #e74c3c;
-        color: white;
+        background: var(--danger-color);
+        color: var(--light-color);
         border-radius: 8px;
         cursor: pointer;
         transition: all 0.3s ease;
@@ -110,7 +134,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             top: 100%;
             left: 0;
             right: 0;
-            background: white;
+            background: var(--background-color);
             flex-direction: column;
             padding: 10px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -125,27 +149,37 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
         }
     }
 
-    .nav-link[href="exams.php"] {
-        color: <?php echo in_array($current_page, ['exams.php', 'view-exam.php', 'view-attempt.php']) ? 'white' : '#666'; ?>;
-        background: <?php echo in_array($current_page, ['exams.php', 'view-exam.php', 'view-attempt.php']) ? '#3498db' : 'transparent'; ?>;
-    }
-
-    .breadcrumb {
+    /* Updated Dark Mode Button Styling */
+    #theme-toggle {
+        padding: 8px;
+        border: none;
+        background: transparent;
+        color: var(--text-color);
+        border-radius: 50%;
+        cursor: pointer;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
-        color: #666;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
     }
 
-    .breadcrumb a {
-        color: #3498db;
-        text-decoration: none;
+    #theme-toggle:hover {
+        background: rgba(0, 0, 0, 0.05);
+        transform: scale(1.05);
     }
 
-    .breadcrumb i {
-        font-size: 12px;
-        color: #95a5a6;
+    #theme-toggle i {
+        font-size: 1.2rem;
+    }
+
+    [data-theme="light"] #theme-toggle i {
+        content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path fill="currentColor" d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0 2a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm0-1a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/></svg>');
+    }
+
+    [data-theme="dark"] #theme-toggle i {
+        content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path fill="currentColor" d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0 2a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm0-1a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/><path fill="currentColor" d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 20a1 1 0 0 1 1-1v-1a1 1 0 1 1-2 0v1a1 1 0 0 1 1 1z"/></svg>');
     }
 </style>
 
@@ -180,6 +214,9 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
         </div>
 
         <div class="user-menu">
+            <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
+                <i class="fas fa-moon"></i>
+            </button>
             <div class="user-avatar">
                 <?php echo $userInitials; ?>
             </div>
@@ -192,9 +229,14 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
 </nav>
 
 <script>
-    // Add mobile menu toggle functionality if needed
-    function toggleMobileMenu() {
-        const navLinks = document.querySelector('.nav-links');
-        navLinks.classList.toggle('show');
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+        const theme = localStorage.getItem('theme') || 'light';
+        document.body.dataset.theme = theme;
+
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+            document.body.dataset.theme = newTheme;
+            localStorage.setItem('theme', newTheme);
+        });
+    });
 </script>

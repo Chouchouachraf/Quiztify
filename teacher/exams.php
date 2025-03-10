@@ -89,6 +89,50 @@ try {
     <title>My Exams - Teacher Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --card-bg-color: #ffffff;
+            --card-border-color: #e0e0e0;
+            --stat-bg-color: #f0f0f0;
+            --alert-success-bg: #d4edda;
+            --alert-success-text: #155724;
+            --alert-success-border: #c3e6cb;
+            --alert-error-bg: #f8d7da;
+            --alert-error-text: #721c24;
+            --alert-error-border: #f5c6cb;
+            --empty-state-bg: #f8f9fa;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+            --card-bg-color: #2a2a2a;
+            --card-border-color: #444444;
+            --stat-bg-color: #222222;
+            --alert-success-bg: #1e3a2d;
+            --alert-success-text: #a3e9bc;
+            --alert-success-border: #2d6a4f;
+            --alert-error-bg: #3d1f22;
+            --alert-error-text: #e9a3a3;
+            --alert-error-border: #712b29;
+            --empty-state-bg: #2a2a2a;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -98,8 +142,9 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
-            color: #2c3e50;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
@@ -117,11 +162,11 @@ try {
 
         .page-title {
             font-size: 24px;
-            color: #2c3e50;
+            color: var(--text-color);
         }
 
         .btn-create {
-            background: #3498db;
+            background: var(--secondary-color);
             color: white;
             padding: 10px 20px;
             border-radius: 5px;
@@ -130,7 +175,7 @@ try {
         }
 
         .btn-create:hover {
-            background: #2980b9;
+            background: var(--primary-color);
         }
 
         .exams-grid {
@@ -140,11 +185,12 @@ try {
         }
 
         .exam-card {
-            background: white;
+            background: var(--card-bg-color);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            transition: transform 0.2s, background-color 0.3s;
+            border: 1px solid var(--card-border-color);
         }
 
         .exam-card:hover {
@@ -153,19 +199,20 @@ try {
 
         .exam-header {
             margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--card-border-color);
             padding-bottom: 15px;
         }
 
         .exam-title {
             font-size: 18px;
-            color: #2c3e50;
+            color: var(--text-color);
             margin-bottom: 5px;
         }
 
         .exam-meta {
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
+            opacity: 0.8;
         }
 
         .exam-status {
@@ -177,12 +224,12 @@ try {
         }
 
         .status-published {
-            background: #2ecc71;
+            background: var(--success-color);
             color: white;
         }
 
         .status-draft {
-            background: #95a5a6;
+            background: var(--warning-color);
             color: white;
         }
 
@@ -196,26 +243,29 @@ try {
         .stat-item {
             text-align: center;
             padding: 10px;
-            background: #f8f9fa;
+            background: var(--stat-bg-color);
             border-radius: 5px;
+            transition: background-color 0.3s;
         }
 
         .stat-value {
             font-size: 18px;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-color);
         }
 
         .stat-label {
             font-size: 12px;
-            color: #666;
+            color: var(--text-color);
+            opacity: 0.8;
             margin-top: 5px;
         }
 
         .exam-dates {
             margin: 15px 0;
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
+            opacity: 0.9;
         }
 
         .exam-actions {
@@ -223,7 +273,7 @@ try {
             gap: 10px;
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--card-border-color);
         }
 
         .btn {
@@ -243,16 +293,16 @@ try {
         }
 
         .btn-view {
-            background: #3498db;
+            background: var(--secondary-color);
             color: white;
         }
 
         .btn-view:hover {
-            background: #2980b9;
+            background: var(--primary-color);
         }
 
         .btn-edit {
-            background: #2ecc71;
+            background: var(--success-color);
             color: white;
         }
 
@@ -261,7 +311,7 @@ try {
         }
 
         .btn-delete {
-            background: #e74c3c;
+            background: var(--danger-color);
             color: white;
         }
 
@@ -272,19 +322,21 @@ try {
         .empty-state {
             text-align: center;
             padding: 40px;
-            background: white;
+            background: var(--empty-state-bg);
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+            border: 1px solid var(--card-border-color);
         }
 
         .empty-state i {
             font-size: 48px;
-            color: #ddd;
+            color: var(--text-color);
             margin-bottom: 15px;
         }
 
         .empty-state p {
-            color: #666;
+            color: var(--text-color);
             margin-bottom: 15px;
         }
 
@@ -292,18 +344,19 @@ try {
             padding: 15px;
             margin-bottom: 20px;
             border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: var(--alert-success-bg);
+            color: var(--alert-success-text);
+            border: 1px solid var(--alert-success-border);
         }
 
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: var(--alert-error-bg);
+            color: var(--alert-error-text);
+            border: 1px solid var(--alert-error-border);
         }
 
         @media (max-width: 768px) {
@@ -317,7 +370,8 @@ try {
         }
 
         .percentage {
-            color: #666;
+            color: var(--text-color);
+            opacity: 0.8;
             font-size: 0.85em;
             margin-left: 5px;
         }
@@ -331,7 +385,7 @@ try {
         .score-value {
             font-size: 1.2em;
             font-weight: 500;
-            color: #2c3e50;
+            color: var(--text-color);
         }
     </style>
 </head>
@@ -432,5 +486,16 @@ try {
             </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get theme from localStorage or default to light
+            const theme = localStorage.getItem('theme') || 'light';
+            // Apply theme to body
+            document.body.setAttribute('data-theme', theme);
+            
+            // Theme toggle already handled in navbar
+        });
+    </script>
 </body>
 </html>

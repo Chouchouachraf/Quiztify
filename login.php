@@ -60,6 +60,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login - <?php echo SITE_NAME; ?></title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
+        :root {
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #5588ff;
+            --secondary-color: #44bb77;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -72,12 +96,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            background: #f4f4f4;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
 
         .wrapper {
             width: 420px;
-            background: #fff;
+            background: var(--light-color);
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
@@ -87,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 36px;
             text-align: center;
             margin-bottom: 20px;
-            color: #333;
+            color: var(--primary-color);
         }
 
         .input-box {
@@ -101,15 +126,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 100%;
             height: 100%;
             background: transparent;
-            border: 2px solid #ccc;
+            border: 2px solid var(--light-color);
             border-radius: 6px;
             outline: none;
             padding: 15px 45px 15px 15px;
+            font-size: 16px;
             transition: all 0.3s ease;
         }
 
         .input-box input:focus {
-            border-color: #4a90e2;
+            border-color: var(--primary-color);
         }
 
         .input-box i {
@@ -118,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 50%;
             transform: translateY(-50%);
             font-size: 20px;
-            color: #999;
+            color: var(--light-color);
         }
 
         .remember-forgot {
@@ -128,24 +154,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .remember-forgot label {
-            color: #666;
+            color: var(--text-color);
             cursor: pointer;
         }
 
         .remember-forgot a {
-            color: #4a90e2;
+            color: var(--primary-color);
             text-decoration: none;
         }
 
         .btn {
             width: 100%;
             height: 45px;
-            background: #4a90e2;
+            background: var(--primary-color);
             border: none;
             border-radius: 6px;
             cursor: pointer;
             font-size: 16px;
-            color: #fff;
+            color: var(--light-color);
             font-weight: 500;
             transition: all 0.3s ease;
         }
@@ -160,22 +186,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .register-link p a {
-            color: #4a90e2;
+            color: var(--primary-color);
             text-decoration: none;
             font-weight: 600;
         }
 
         .error {
-            background: #ffe5e5;
-            color: #ff4444;
+            background: var(--danger-color);
+            color: var(--light-color);
             padding: 10px;
             border-radius: 6px;
             margin-bottom: 20px;
             text-align: center;
         }
+
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: var(--primary-color);
+            color: var(--light-color);
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .wrapper {
+                width: 100%;
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .wrapper h1 {
+                font-size: 28px;
+            }
+        }
     </style>
 </head>
 <body>
+    <button id="theme-toggle">
+        <i class="bx bx-moon"></i> Toggle Theme
+    </button>
     <div class="wrapper">
         <h1>Login</h1>
         <?php if (isset($error)): ?>
@@ -194,7 +247,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="remember-forgot">
                 <label><input type="checkbox" name="remember"> Remember me</label>
-                <a href="forgot-password.php">Forgot password?</a>
             </div>
 
             <button type="submit" class="btn">Login</button>
@@ -204,5 +256,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+            });
+        });
+    </script>
 </body>
 </html>

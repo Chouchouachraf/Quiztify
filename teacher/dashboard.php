@@ -89,6 +89,18 @@ try {
     <title>Teacher Dashboard - Quiztify</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -98,8 +110,8 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
-            color: #2c3e50;
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
 
         .container {
@@ -114,7 +126,7 @@ try {
 
         .dashboard-header h1 {
             font-size: 24px;
-            color: #2c3e50;
+            color: var(--primary-color);
             margin-bottom: 10px;
         }
 
@@ -126,7 +138,7 @@ try {
         }
 
         .stat-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -141,12 +153,12 @@ try {
         .stat-value {
             font-size: 28px;
             font-weight: bold;
-            color: #3498db;
+            color: var(--secondary-color);
             margin-bottom: 5px;
         }
 
         .stat-label {
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
         }
 
@@ -157,7 +169,7 @@ try {
         }
 
         .dashboard-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -169,16 +181,16 @@ try {
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--light-color);
         }
 
         .card-header h2 {
             font-size: 18px;
-            color: #2c3e50;
+            color: var(--primary-color);
         }
 
         .view-all {
-            color: #3498db;
+            color: var(--secondary-color);
             text-decoration: none;
             font-size: 0.9rem;
         }
@@ -189,7 +201,7 @@ try {
 
         .exam-item, .activity-item {
             padding: 15px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--light-color);
         }
 
         .exam-title {
@@ -198,7 +210,7 @@ try {
         }
 
         .exam-meta, .activity-meta {
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
             display: flex;
             gap: 15px;
@@ -211,7 +223,7 @@ try {
         }
 
         .classroom-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -224,12 +236,12 @@ try {
         .classroom-name {
             font-size: 1.1rem;
             font-weight: 500;
-            color: #2c3e50;
+            color: var(--primary-color);
             margin-bottom: 5px;
         }
 
         .classroom-department {
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
         }
 
@@ -237,7 +249,7 @@ try {
             display: flex;
             gap: 15px;
             margin-top: 10px;
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
         }
 
@@ -342,7 +354,6 @@ try {
                 <?php endif; ?>
             </div>
         </div>
-
         <!-- Classrooms Section -->
         <div class="dashboard-card" style="margin-top: 20px;">
             <div class="card-header">

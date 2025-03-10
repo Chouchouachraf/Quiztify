@@ -28,7 +28,6 @@ if ($page === 'login' || $page === 'register') {
 }
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,15 +37,28 @@ if ($page === 'login' || $page === 'register') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary-color: #1a73e8;
-            --secondary-color: #4285f4;
-            --accent-color: #34a853;
-            --dark-color: #202124;
-            --light-color: #f8f9fa;
-            --sky-blue: #e8f0fe;
-            --white: #ffffff;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
         }
 
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #5588ff;
+            --secondary-color: #44bb77;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
         * {
             margin: 0;
             padding: 0;
@@ -56,8 +68,8 @@ if ($page === 'login' || $page === 'register') {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: var(--sky-blue);
-            color: var(--dark-color);
+            background-color: var(--background-color);
+            color: var(--text-color);
         }
 
         .container {
@@ -158,6 +170,13 @@ if ($page === 'login' || $page === 'register') {
             margin-bottom: 2.5rem;
         }
 
+        .hero img {
+            width: 250px; /* Increased image size */
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
         /* Features */
         .features {
             padding: 6rem 0;
@@ -250,11 +269,20 @@ if ($page === 'login' || $page === 'register') {
             .hero h1 {
                 font-size: 2.5rem;
             }
-            
+
+            .hero-content > div {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .hero img {
+                margin-bottom: 1rem;
+            }
+
             .nav-content {
                 padding: 0 1rem;
             }
-            
+
             .features-grid {
                 grid-template-columns: 1fr;
                 padding: 0 1rem;
@@ -264,26 +292,35 @@ if ($page === 'login' || $page === 'register') {
                 padding-top: 6rem;
             }
         }
+            
     </style>
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-    <div class="container nav-content">
-        <a href="index.php" class="logo">Quiztify</a>
-        <div class="nav-links">
-            <a href="index.php?page=login" class="btn btn-outline">Login</a>
-            <a href="index.php?page=register" class="btn btn-primary">Register</a>
+        <div class="container nav-content">
+            <a href="index.php" class="logo">Quiztify</a>
+            <div class="nav-links">
+                <a href="index.php?page=login" class="btn btn-outline">Login</a>
+                <a href="index.php?page=register" class="btn btn-primary">Register</a>
+                <button id="theme-toggle" class="btn btn-primary">
+                    <i class="fas fa-adjust"></i> Toggle Theme
+                </button>
+            </div>
         </div>
-    </div>
     </nav>
 
     <!-- Hero Section -->
     <section class="hero">
         <div class="container hero-content">
-            <h1>Welcome to Quiztify</h1>
-            <p>Experience the next generation of online examinations and assessments</p>
-            <div class="nav-links" style="justify-content: center;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 2rem;">
+                <img src="./pictures/App.pnj.png" alt="Quiztify Logo">
+                <div>
+                    <h1>Welcome to Quiztify</h1>
+                    <p>Experience the next generation of online examinations and assessments</p>
+                </div>
+            </div>
+            <div class="nav-links" style="justify-content: center; margin-top: 2rem;">
                 <a href="index.php?page=register" class="btn btn-primary">Get Started</a>
                 <a href="#features" class="btn btn-outline">Learn More</a>
             </div>
@@ -351,5 +388,18 @@ if ($page === 'login' || $page === 'register') {
             </div>
         </div>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+            });
+        });
+    </script>
 </body>
 </html>

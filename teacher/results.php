@@ -47,6 +47,38 @@ try {
     <title>Exam Results - Teacher Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --border-color: #ddd;
+            --table-header-bg: #f8f9fa;
+            --table-hover-bg: #f1f2f6;
+            --card-bg: #ffffff;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+            --border-color: #444;
+            --table-header-bg: #2c3e50;
+            --table-hover-bg: #2c2c2c;
+            --card-bg: #242424;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -56,8 +88,9 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
-            color: #2c3e50;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
@@ -75,14 +108,15 @@ try {
 
         .page-title {
             font-size: 24px;
-            color: #2c3e50;
+            color: var(--primary-color);
         }
 
         .results-container {
-            background: white;
+            background: var(--card-bg);
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             overflow: hidden;
+            transition: background-color 0.3s;
         }
 
         .results-table {
@@ -94,17 +128,20 @@ try {
         .results-table td {
             padding: 15px;
             text-align: left;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s;
         }
 
         .results-table th {
-            background: #f8f9fa;
+            background: var(--table-header-bg);
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .results-table tr:hover {
-            background: #f8f9fa;
+            background: var(--table-hover-bg);
+            transition: background-color 0.3s;
         }
 
         .score-badge {
@@ -115,19 +152,19 @@ try {
         }
 
         .score-pass {
-            background: #d4edda;
-            color: #155724;
+            background: var(--success-color);
+            color: white;
         }
 
         .score-fail {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--danger-color);
+            color: white;
         }
 
         .btn-view {
             display: inline-block;
             padding: 6px 12px;
-            background: #3498db;
+            background: var(--secondary-color);
             color: white;
             text-decoration: none;
             border-radius: 4px;
@@ -136,7 +173,7 @@ try {
         }
 
         .btn-view:hover {
-            background: #2980b9;
+            background: var(--primary-color);
         }
 
         .filters {
@@ -147,29 +184,75 @@ try {
 
         .filter-input {
             padding: 8px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             font-size: 14px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        .filter-input::placeholder {
+            color: var(--text-color);
+            opacity: 0.7;
         }
 
         .empty-state {
             text-align: center;
             padding: 40px;
-            color: #666;
+            color: var(--text-color);
         }
 
         .empty-state i {
             font-size: 48px;
-            color: #ddd;
+            color: var(--light-color);
             margin-bottom: 15px;
         }
 
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .alert-success {
+            background: var(--success-color);
+            color: white;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .alert-error {
+            background: var(--danger-color);
+            color: white;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
         @media (max-width: 768px) {
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .filters {
+                width: 100%;
+                flex-direction: column;
+            }
+            
             .results-table {
                 display: block;
                 overflow-x: auto;
             }
         }
+                /* Light mode table text color */
+table th, table td {
+    color: var(--text-color);
+}
+
+/* Dark mode table text color */
+[data-theme="dark"] table th, [data-theme="dark"] table td {
+    color: var(--text-color);
+}
     </style>
 </head>
 <body>
@@ -183,6 +266,12 @@ try {
                 <input type="text" id="examFilter" class="filter-input" placeholder="Search by exam title...">
             </div>
         </div>
+
+        <?php if ($flash = getFlashMessage()): ?>
+            <div class="alert alert-<?php echo $flash['type']; ?>">
+                <?php echo $flash['message']; ?>
+            </div>
+        <?php endif; ?>
 
         <div class="results-container">
             <?php if (empty($results)): ?>
@@ -237,28 +326,38 @@ try {
     </div>
 
     <script>
-        // Search functionality
-        const studentFilter = document.getElementById('studentFilter');
-        const examFilter = document.getElementById('examFilter');
-        const tableRows = document.querySelectorAll('.results-table tbody tr');
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set theme from localStorage
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
 
-        function filterResults() {
-            const studentSearch = studentFilter.value.toLowerCase();
-            const examSearch = examFilter.value.toLowerCase();
+            // Theme toggle functionality is handled in teacher-nav.php
+            
+            // Search functionality
+            const studentFilter = document.getElementById('studentFilter');
+            const examFilter = document.getElementById('examFilter');
+            const tableRows = document.querySelectorAll('.results-table tbody tr');
 
-            tableRows.forEach(row => {
-                const studentName = row.cells[0].textContent.toLowerCase();
-                const examTitle = row.cells[1].textContent.toLowerCase();
-                
-                const matchesStudent = studentName.includes(studentSearch);
-                const matchesExam = examTitle.includes(examSearch);
+            function filterResults() {
+                const studentSearch = studentFilter.value.toLowerCase();
+                const examSearch = examFilter.value.toLowerCase();
 
-                row.style.display = (matchesStudent && matchesExam) ? '' : 'none';
-            });
-        }
+                tableRows.forEach(row => {
+                    const studentName = row.cells[0].textContent.toLowerCase();
+                    const examTitle = row.cells[1].textContent.toLowerCase();
+                    
+                    const matchesStudent = studentName.includes(studentSearch);
+                    const matchesExam = examTitle.includes(examSearch);
 
-        studentFilter.addEventListener('input', filterResults);
-        examFilter.addEventListener('input', filterResults);
+                    row.style.display = (matchesStudent && matchesExam) ? '' : 'none';
+                });
+            }
+
+            if (studentFilter && examFilter) {
+                studentFilter.addEventListener('input', filterResults);
+                examFilter.addEventListener('input', filterResults);
+            }
+        });
     </script>
 </body>
 </html>

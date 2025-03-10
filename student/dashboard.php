@@ -83,6 +83,20 @@ try {
             --warning-color: #f1c40f;
             --light-color: #ecf0f1;
             --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --accent-color: #3498db; /* Blue accent color */
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #5588ff;
+            --secondary-color: #44bb77;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
         }
 
         * {
@@ -94,7 +108,7 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
+            background-color: var(--background-color);
             color: var(--dark-color);
         }
 
@@ -113,7 +127,7 @@ try {
 
         .welcome-section {
             grid-column: 1 / -1;
-            background: #fff;
+            background: var(--light-color);
             padding: 25px;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -121,15 +135,15 @@ try {
         }
 
         .exam-list, .recent-attempts {
-            background: #fff;
+            background: var(--light-color);
             padding: 25px;
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .exam-card {
-            background: #fff;
-            border: 1px solid #e1e8ed;
+            background: var(--light-color);
+            border: 1px solid var(--light-color);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
@@ -150,7 +164,7 @@ try {
 
         .exam-title {
             font-size: 1.2em;
-            color: var(--primary-color);
+            color: var(--accent-color);
             margin-bottom: 5px;
         }
 
@@ -188,7 +202,7 @@ try {
             align-items: center;
             gap: 5px;
             font-size: 0.9em;
-            color: #666;
+            color: var(--text-color);
         }
 
         .exam-actions {
@@ -201,7 +215,7 @@ try {
             align-items: center;
             gap: 5px;
             padding: 8px 16px;
-            background-color: var(--secondary-color);
+            background-color: var(--accent-color);
             color: white;
             border: none;
             border-radius: 5px;
@@ -220,8 +234,8 @@ try {
         }
 
         .attempt-card {
-            background: #fff;
-            border: 1px solid #e1e8ed;
+            background: var(--light-color);
+            border: 1px solid var(--light-color);
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 15px;
@@ -248,22 +262,144 @@ try {
         .empty-state {
             text-align: center;
             padding: 40px 20px;
-            color: #666;
+            color: var(--text-color);
         }
 
         .empty-state i {
             font-size: 3em;
-            color: #bdc3c7;
+            color: var(--light-color);
             margin-bottom: 10px;
         }
 
+        .navbar {
+            background: var(--light-color);
+            padding: 15px 0;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav-brand i {
+            color: var(--accent-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-link:hover {
+            background: var(--light-color);
+            color: var(--accent-color);
+        }
+
+        .nav-link.active {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .nav-link i {
+            font-size: 1.1rem;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 35px;
+            height: 35px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            border: none;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+
+        #theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background: var(--accent-color);
+            color: var(--light-color);
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
-            .content {
-                grid-template-columns: 1fr;
+            .nav-links {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--light-color);
+                flex-direction: column;
+                padding: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             }
 
-            .exam-stats {
-                grid-template-columns: repeat(2, 1fr);
+            .nav-links.show {
+                display: flex;
+            }
+
+            .mobile-menu {
+                display: block;
             }
         }
     </style>
@@ -312,6 +448,8 @@ try {
                                     echo '<span class="exam-status status-upcoming">Upcoming</span>';
                                 } elseif ($now <= $endTime) {
                                     echo '<span class="exam-status status-active">Active</span>';
+                                } else {
+                                    echo '<span class="exam-status status-expired">Expired</span>';
                                 }
                                 ?>
                             </div>
@@ -352,16 +490,13 @@ try {
                                     <button class="btn-start" disabled>
                                         <i class='bx bx-x-circle'></i> Exam Expired
                                     </button>
-                                <?php elseif ($exam['ongoing_attempts'] > 0): ?>
-                                    <a href="resume-exam.php?id=<?php echo $exam['id']; ?>" class="btn-start">
-                                        <i class='bx bx-play-circle'></i> Resume Exam
-                                    </a>
+                                <?php elseif ($exam['attempts_taken'] >= $exam['attempts_allowed']): ?>
+                                    <button class="btn-start" disabled>
+                                        <i class='bx bx-x-circle'></i> No Attempts Left
+                                    </button>
                                 <?php else: ?>
                                     <a href="take-exam.php?id=<?php echo $exam['id']; ?>" class="btn-start">
                                         <i class='bx bx-play'></i> Start Exam
-                                        <?php if ($now > $startTime): ?>
-                                            <small>(Late start)</small>
-                                        <?php endif; ?>
                                     </a>
                                 <?php endif; ?>
                             </div>
@@ -397,5 +532,18 @@ try {
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+            });
+        });
+    </script>
 </body>
 </html>

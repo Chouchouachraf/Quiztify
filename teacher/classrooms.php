@@ -108,7 +108,62 @@ try {
     <title>Classrooms - Teacher Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* ... (previous CSS styles) ... */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9; /* Dark blue primary color */
+            --secondary-color: #3498db; /* Blue secondary color */
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-header h1 {
+            font-size: 24px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
         .classroom-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -117,7 +172,7 @@ try {
         }
 
         .classroom-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -133,11 +188,11 @@ try {
         .classroom-title {
             font-size: 1.2rem;
             font-weight: 600;
-            color: #2c3e50;
+            color: var(--primary-color);
         }
 
         .classroom-department {
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
         }
 
@@ -146,15 +201,15 @@ try {
             gap: 15px;
             margin: 15px 0;
             padding: 10px 0;
-            border-top: 1px solid #eee;
-            border-bottom: 1px solid #eee;
+            border-top: 1px solid var(--light-color);
+            border-bottom: 1px solid var(--light-color);
         }
 
         .stat {
             display: flex;
             align-items: center;
             gap: 5px;
-            color: #666;
+            color: var(--text-color);
             font-size: 0.9rem;
         }
 
@@ -169,7 +224,7 @@ try {
             justify-content: space-between;
             align-items: center;
             padding: 8px 0;
-            border-bottom: 1px solid #eee;
+            border-bottom: 1px solid var(--light-color);
         }
 
         .student-info {
@@ -182,7 +237,7 @@ try {
             width: 30px;
             height: 30px;
             border-radius: 50%;
-            background: #3498db;
+            background: var(--secondary-color);
             color: white;
             display: flex;
             align-items: center;
@@ -203,7 +258,7 @@ try {
         }
 
         .modal-content {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             width: 90%;
@@ -230,9 +285,6 @@ try {
 
         <div class="page-header">
             <h1><i class="fas fa-chalkboard"></i> Classrooms</h1>
-            <button class="btn btn-primary" onclick="showModal('createClassroomModal')">
-                <i class="fas fa-plus"></i> Create Classroom
-            </button>
         </div>
 
         <?php if ($flash = getFlashMessage()): ?>

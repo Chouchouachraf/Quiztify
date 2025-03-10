@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
@@ -56,6 +57,29 @@ try {
     <title>Available Exams - <?php echo SITE_NAME; ?></title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #5588ff;
+            --secondary-color:rgb(68, 108, 187);
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -64,8 +88,8 @@ try {
         }
 
         body {
-            background-color: #f5f5f5;
-            color: #333;
+            background-color: var(--background-color);
+            color: var(--dark-color);
             line-height: 1.6;
         }
 
@@ -77,10 +101,10 @@ try {
 
         .page-title {
             font-size: 24px;
-            color: #2c3e50;
+            color: var(--primary-color);
             margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 2px solid var(--light-color);
         }
 
         .exam-grid {
@@ -91,7 +115,7 @@ try {
         }
 
         .exam-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -103,8 +127,8 @@ try {
         }
 
         .exam-header {
-            background: #4a90e2;
-            color: white;
+            background: var(--secondary-color);
+            color: var(--light-color);
             padding: 15px;
         }
 
@@ -126,68 +150,69 @@ try {
         .exam-info {
             margin-bottom: 8px;
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
         }
 
         .exam-info i {
             width: 20px;
-            color: #4a90e2;
+            color: var(--secondary-color);
             margin-right: 5px;
         }
 
         .classroom-info {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #eee;
+            border-top: 1px solid var(--light-color);
             font-size: 14px;
-            color: #666;
+            color: var(--text-color);
         }
 
         .alert {
             padding: 15px;
             border-radius: 5px;
             margin-bottom: 20px;
-            background: #fff;
+            background: var(--light-color);
             border-left: 4px solid;
         }
 
         .alert-error {
-            border-color: #dc3545;
-            color: #dc3545;
-            background-color: #fff5f5;
+            border-color: var(--danger-color);
+            color: var(--danger-color);
+            background-color: var(--light-color);
         }
 
         .alert-success {
-            border-color: #28a745;
-            color: #28a745;
-            background-color: #f4fff5;
+            border-color: var(--success-color);
+            color: var(--success-color);
+            background-color: var(--light-color);
         }
 
         .no-exams {
             text-align: center;
             padding: 40px;
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .no-exams i {
             font-size: 48px;
-            color: #4a90e2;
+            color: var(--secondary-color);
             margin-bottom: 15px;
         }
 
         .no-exams h3 {
-            color: #2c3e50;
+            color: var(--primary-color);
             margin-bottom: 10px;
         }
 
         .no-exams p {
-            color: #666;
+            color: var(--text-color);
         }
     </style>
 </head>
 <body>
+<?php include '../includes/student-nav.php'; ?>
     <div class="container">
         <h1 class="page-title">Available Exams</h1>
 

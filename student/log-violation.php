@@ -2,7 +2,7 @@
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
-require_once 'ExamManager.php';
+require_once 'ExamManager.php'; // Create this file to store the ExamManager class
 
 checkRole('student');
 
@@ -94,6 +94,7 @@ try {
     <title>Take Exam - <?php echo htmlspecialchars($exam['title']); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/codemirror.min.css">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -310,6 +311,21 @@ try {
             background: var(--success-color);
             transition: width 0.3s ease;
         }
+
+        .response-format-selector {
+            margin-bottom: 20px;
+        }
+
+        .code-editor-container {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .CodeMirror {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            height: auto;
+        }
     </style>
 </head>
 <body>
@@ -407,7 +423,19 @@ try {
                                 <label for="false_<?php echo $question['id']; ?>">False</label>
                             </div>
                         <?php else: ?>
-                            <div class="paragraph-container">
+                            <div class="response-format-selector">
+                                <label for="response_format_<?php echo $question['id']; ?>">Response Format:</label>
+                                <select id="response_format_<?php echo $question['id']; ?>" class="form-select response-format" data-question-id="<?php echo $question['id']; ?>">
+                                    <option value="paragraph">Paragraph</option>
+                                    <option value="code">Code</option>
+                                </select>
+                            </div>
+
+                            <div class="code-editor-container" id="code_editor_<?php echo $question['id']; ?>">
+                                <textarea id="code_input_<?php echo $question['id']; ?>" name="code_answers[<?php echo $question['id']; ?>]"></textarea>
+                            </div>
+
+                            <div class="paragraph-container" id="paragraph_<?php echo $question['id']; ?>">
                                 <textarea name="paragraph_answers[<?php echo $question['id']; ?>]" 
                                           class="form-control" rows="3" 
                                           placeholder="Enter your answer"></textarea>
@@ -416,7 +444,7 @@ try {
                     </div>
                 </div>
             <?php endforeach; ?>
-            
+
             <div class="submit-container">
                 <button type="submit" class="submit-btn" id="submitBtn">
                     <i class='bx bx-check-circle'></i>
@@ -426,7 +454,49 @@ try {
         </form>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.0/mode/clike/clike.min.js"></script>
     <script>
+        // Initialize CodeMirror instances
+        const codeEditors = {};
+
+        document.querySelectorAll('.response-format').forEach(select => {
+            const questionId = select.getAttribute('data-question-id');
+            const codeEditorContainer = document.getElementById(`code_editor_${questionId}`);
+            const paragraphContainer = document.getElementById(`paragraph_${questionId}`);
+            const codeTextarea = document.getElementById(`code_input_${questionId}`);
+
+            codeEditors[questionId] = CodeMirror.fromTextArea(codeTextarea, {
+                lineNumbers: true,
+                mode: 'text/x-csrc',
+                indentUnit: 4,
+                theme: 'default',
+                matchBrackets: true,
+                autoCloseBrackets: true,
+            });
+
+            select.addEventListener('change', function() {
+                if (this.value === 'code') {
+                    codeEditorContainer.style.display = 'block';
+                    paragraphContainer.style.display = 'none';
+                    codeEditors[questionId].refresh();
+                } else {
+                    codeEditorContainer.style.display = 'none';
+                    paragraphContainer.style.display = 'block';
+                }
+            });
+
+            // Initialize based on default selection
+            if (select.value === 'code') {
+                codeEditorContainer.style.display = 'block';
+                paragraphContainer.style.display = 'none';
+                codeEditors[questionId].refresh();
+            } else {
+                codeEditorContainer.style.display = 'none';
+                paragraphContainer.style.display = 'block';
+            }
+        });
+
         // Function to log violations
         function logViolation(type) {
             fetch('log-violation.php', {
@@ -443,7 +513,7 @@ try {
             .then(data => {
                 if (data.status === 'success') {
                     console.log('Violation logged:', type);
-                    alert('Warning: Cheating is detected and logged. Please adhere to exam rules.');
+                    alert('Cheating detected! Your actions have been logged.');
                 } else {
                     console.error('Failed to log violation:', data.message);
                 }

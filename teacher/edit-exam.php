@@ -25,14 +25,9 @@ try {
 
     // Get exam questions
     $stmt = $conn->prepare("
-        SELECT q.*, GROUP_CONCAT(
-            CONCAT(mo.id, ':::', mo.option_text, ':::', mo.is_correct)
-            ORDER BY mo.id SEPARATOR '|||'
-        ) as options
+        SELECT q.*
         FROM questions q
-        LEFT JOIN mcq_options mo ON q.id = mo.question_id
         WHERE q.exam_id = ?
-        GROUP BY q.id
         ORDER BY q.id
     ");
     $stmt->execute([$examId]);
@@ -58,8 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 start_date = ?,
                 end_date = ?,
                 duration_minutes = ?,
-                passing_score = ?,
-                attempts_allowed = ?,
                 is_published = ?
             WHERE id = ? AND created_by = ?
         ");
@@ -70,76 +63,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['start_date'],
             $_POST['end_date'],
             $_POST['duration_minutes'],
-            $_POST['passing_score'],
-            $_POST['attempts_allowed'],
             isset($_POST['is_published']) ? 1 : 0,
             $examId,
             $_SESSION['user_id']
         ]);
 
-        // Handle questions update if no attempts have been made
-        if ($exam['attempt_count'] == 0) {
-            // Delete existing questions and options
-            $stmt = $conn->prepare("DELETE FROM mcq_options WHERE question_id IN (SELECT id FROM questions WHERE exam_id = ?)");
-            $stmt->execute([$examId]);
-            
-            $stmt = $conn->prepare("DELETE FROM questions WHERE exam_id = ?");
-            $stmt->execute([$examId]);
-
-            // Add new questions and options
-            if (isset($_POST['questions']) && is_array($_POST['questions'])) {
-                foreach ($_POST['questions'] as $index => $q) {
-                    // Handle image upload
-                    $question_image = null;
-                    if (isset($_FILES['questions']['name'][$index]['image']) && 
-                        $_FILES['questions']['error'][$index]['image'] === UPLOAD_ERR_OK) {
-                        
-                        $image = $_FILES['questions']['name'][$index]['image'];
-                        $image_temp = $_FILES['questions']['tmp_name'][$index]['image'];
-                        $image_ext = strtolower(pathinfo($image, PATHINFO_EXTENSION));
-                        
-                        // Validate image type
-                        $allowed_types = ['jpg', 'jpeg', 'png', 'gif'];
-                        if (!in_array($image_ext, $allowed_types)) {
-                            throw new Exception('Invalid image type. Allowed types: ' . implode(', ', $allowed_types));
-                        }
-                        
-                        // Generate unique filename
-                        $new_filename = uniqid() . '.' . $image_ext;
-                        $upload_path = '../uploads/questions/' . $new_filename;
-                        
-                        // Create directory if it doesn't exist
-                        if (!is_dir('../uploads/questions')) {
-                            mkdir('../uploads/questions', 0777, true);
-                        }
-                        
-                        // Move uploaded file
-                        if (move_uploaded_file($image_temp, $upload_path)) {
-                            $question_image = $new_filename;
-                        }
-                    }
-
-                    // Insert question with image
-                    $stmt = $conn->prepare("
-                        INSERT INTO questions (exam_id, question_text, question_image)
-                        VALUES (?, ?, ?)
-                    ");
-                    $stmt->execute([$examId, $q['text'], $question_image]);
-                    $questionId = $conn->lastInsertId();
-
-                    // Handle options
-                    foreach ($q['options'] as $index => $option) {
-                        $stmt = $conn->prepare("
-                            INSERT INTO mcq_options (question_id, option_text, is_correct)
-                            VALUES (?, ?, ?)
-                        ");
-                        $stmt->execute([
-                            $questionId,
-                            $option,
-                            $index == $q['correct_option'] ? 1 : 0
-                        ]);
-                    }
-                }
+        // Update question texts
+        if (isset($_POST['question_texts']) && is_array($_POST['question_texts'])) {
+            foreach ($_POST['question_texts'] as $questionId => $questionText) {
+                $stmt = $conn->prepare("
+                    UPDATE questions SET
+                        question_text = ?
+                    WHERE id = ? AND exam_id = ?
+                ");
+                $stmt->execute([$questionText, $questionId, $examId]);
             }
         }
 
@@ -164,36 +101,112 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Edit Exam - <?php echo htmlspecialchars($exam['title']); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Add your CSS styles here */
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --text-color: #2c3e50;
+            --border-color: #ddd;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+            --border-color: #444444;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 0;
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
 
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            margin: 0;
+            color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
         .form-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
+            background: var(--background-color);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        .form-section h2 {
+            color: var(--primary-color);
+            margin-top: 0;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 500;
+            color: var(--text-color);
         }
 
         .form-control {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            background-color: var(--background-color);
+            color: var(--text-color);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--secondary-color);
         }
 
         .questions-container {
@@ -201,91 +214,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         .question-card {
-            background: #f8f9fa;
-            padding: 15px;
+            background: var(--light-color);
+            padding: 20px;
             border-radius: 8px;
             margin-bottom: 15px;
-        }
-
-        .options-list {
-            margin-top: 10px;
-        }
-
-        .option-item {
-            margin-bottom: 5px;
+            border: 1px solid var(--border-color);
         }
 
         .btn-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
             margin-top: 20px;
-            text-align: right;
         }
 
         .btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 5px;
-            cursor: pointer;
             border: none;
-            font-size: 14px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
         .btn-primary {
-            background: #3498db;
+            background-color: var(--secondary-color);
             color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
         }
 
         .btn-danger {
-            background: #e74c3c;
+            background-color: var(--danger-color);
             color: white;
         }
 
-        .warning-message {
-            background: #fff3cd;
-            color: #856404;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 20px;
+        .btn-danger:hover {
+            background-color: #c0392b;
         }
 
-        .current-image {
-            margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        
-        .current-image img {
-            max-width: 200px;
-            height: auto;
-            display: block;
-            margin-bottom: 10px;
-        }
-        
-        .option-item {
+        .warning-message {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 15px;
         }
-        
-        .option-item input[type="radio"] {
-            margin: 0;
+
+        .warning-message i {
+            font-size: 20px;
         }
     </style>
 </head>
-<body>
+<body class="light-mode">
     <div class="container">
-        <?php include '../includes/teacher-nav.php'; ?>
+        <header>
+            <h1>Edit Exam: <?php echo htmlspecialchars($exam['title']); ?></h1>
+            <button id="theme-toggle" class="theme-toggle" title="Toggle Dark Mode">
+                <i class="fas fa-moon"></i>
+            </button>
+        </header>
 
-        <h1>Edit Exam: <?php echo htmlspecialchars($exam['title']); ?></h1>
-
-        <?php if ($exam['attempt_count'] > 0): ?>
-            <div class="warning-message">
-                <i class="fas fa-exclamation-triangle"></i>
-                This exam has been attempted by students. You can only modify basic details, not questions.
-            </div>
-        <?php endif; ?>
-
-        <form method="POST" id="editExamForm" enctype="multipart/form-data">
+        <form method="POST" id="editExamForm">
             <div class="form-section">
                 <h2>Basic Details</h2>
                 <div class="form-group">
@@ -296,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-group">
                     <label for="description">Description</label>
-                    <textarea id="description" name="description" class="form-control" rows="3"
+                    <textarea id="description" name="description" class="form-control" rows="4"
                             required><?php echo htmlspecialchars($exam['description']); ?></textarea>
                 </div>
 
@@ -319,18 +314,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <div class="form-group">
-                    <label for="passing_score">Passing Score (%)</label>
-                    <input type="number" id="passing_score" name="passing_score" class="form-control"
-                           value="<?php echo $exam['passing_score']; ?>" required min="0" max="100">
-                </div>
-
-                <div class="form-group">
-                    <label for="attempts_allowed">Attempts Allowed</label>
-                    <input type="number" id="attempts_allowed" name="attempts_allowed" class="form-control"
-                           value="<?php echo $exam['attempts_allowed']; ?>" required min="1">
-                </div>
-
-                <div class="form-group">
                     <label>
                         <input type="checkbox" name="is_published" value="1" 
                                <?php echo $exam['is_published'] ? 'checked' : ''; ?>>
@@ -339,56 +322,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <?php if ($exam['attempt_count'] == 0): ?>
-                <div class="form-section">
-                    <h2>Questions</h2>
-                    <div id="questionsContainer">
-                        <?php foreach ($questions as $index => $question): ?>
-                            <div class="question-card">
-                                <div class="form-group">
-                                    <label>Question <?php echo $index + 1; ?></label>
-                                    <input type="text" name="questions[<?php echo $index; ?>][text]" 
-                                           class="form-control" value="<?php echo htmlspecialchars($question['question_text']); ?>" required>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Question Image</label>
-                                    <?php if ($question['question_image']): ?>
-                                        <div class="current-image">
-                                            <img src="../uploads/questions/<?php echo htmlspecialchars($question['question_image']); ?>" 
-                                                 alt="Question image" style="max-width: 200px; margin: 10px 0;">
-                                            <div>
-                                                <label>
-                                                    <input type="checkbox" name="questions[<?php echo $index; ?>][remove_image]" value="1">
-                                                    Remove image
-                                                </label>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-                                    <input type="file" name="questions[<?php echo $index; ?>][image]" 
-                                           class="form-control" accept="image/*">
-                                </div>
-
-                                <div class="options-list">
-                                    <?php 
-                                    $options = explode('|||', $question['options']);
-                                    foreach ($options as $optionIndex => $option):
-                                        list($optionId, $optionText, $isCorrect) = explode(':::', $option);
-                                    ?>
-                                        <div class="option-item">
-                                            <input type="text" name="questions[<?php echo $index; ?>][options][]" 
-                                                   class="form-control" value="<?php echo htmlspecialchars($optionText); ?>" required>
-                                            <input type="radio" name="questions[<?php echo $index; ?>][correct_option]" 
-                                                   value="<?php echo $optionIndex; ?>" <?php echo $isCorrect ? 'checked' : ''; ?> required>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
+            <div class="form-section">
+                <h2>Questions</h2>
+                <div class="questions-container">
+                    <?php foreach ($questions as $question): ?>
+                        <div class="question-card">
+                            <div class="form-group">
+                                <label>Question <?php echo $question['id']; ?></label>
+                                <input type="text" name="question_texts[<?php echo $question['id']; ?>]" 
+                                       class="form-control" value="<?php echo htmlspecialchars($question['question_text']); ?>" required>
                             </div>
-                        <?php endforeach; ?>
-                    </div>
-                    <button type="button" class="btn btn-primary" onclick="addQuestion()">Add Question</button>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
-            <?php endif; ?>
+            </div>
 
             <div class="btn-container">
                 <button type="button" class="btn btn-danger" onclick="history.back()">Cancel</button>
@@ -398,38 +345,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <script>
-        function addQuestion() {
-            const container = document.getElementById('questionsContainer');
-            const questionIndex = container.children.length;
-            
-            const questionCard = document.createElement('div');
-            questionCard.className = 'question-card';
-            questionCard.innerHTML = `
-                <div class="form-group">
-                    <label>Question ${questionIndex + 1}</label>
-                    <input type="text" name="questions[${questionIndex}][text]" class="form-control" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Question Image</label>
-                    <input type="file" name="questions[${questionIndex}][image]" class="form-control" accept="image/*">
-                </div>
-
-                <div class="options-list">
-                    ${Array(4).fill().map((_, i) => `
-                        <div class="option-item">
-                            <input type="text" name="questions[${questionIndex}][options][]" class="form-control" 
-                                   placeholder="Option ${i + 1}" required>
-                            <input type="radio" name="questions[${questionIndex}][correct_option]" 
-                                   value="${i}" required>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            
-            container.appendChild(questionCard);
-        }
-
         // Form validation
         document.getElementById('editExamForm').addEventListener('submit', function(e) {
             const startDate = new Date(document.getElementById('start_date').value);
@@ -439,6 +354,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 e.preventDefault();
                 alert('End date must be after start date');
             }
+        });
+
+        // Dark/Light mode toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = savedTheme;
+
+            document.getElementById('theme-toggle').addEventListener('click', function() {
+                const newTheme = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+                document.body.dataset.theme = newTheme;
+                localStorage.setItem('theme', newTheme);
+                
+                // Update icon based on theme
+                if (newTheme === 'dark') {
+                    this.innerHTML = '<i class="fas fa-sun"></i>';
+                } else {
+                    this.innerHTML = '<i class="fas fa-moon"></i>';
+                }
+            });
         });
     </script>
 </body>

@@ -61,7 +61,7 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Results - <?php echo htmlspecialchars($exam['title']); ?></title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -73,6 +73,20 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             --light-color: #ecf0f1;
             --text-dark: #2c3e50;
             --text-light: #95a5a6;
+            --background-color: #f5f6fa;
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --primary-color: #2980b9;
+            --secondary-color: #3498db;
+            --accent-color: #9b59b6;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --text-dark: #ffffff;
+            --text-light: #aaaaaa;
         }
 
         * {
@@ -84,7 +98,9 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
+            background-color: var(--background-color);
+            color: var(--text-dark);
+            transition: background-color 0.3s, color 0.3s;
         }
 
         .container {
@@ -93,14 +109,41 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             padding: 20px;
         }
 
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+        }
+
+        .breadcrumb a {
+            color: var(--secondary-color);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb i {
+            font-size: 0.8em;
+            color: var(--text-light);
+        }
+
+        .breadcrumb span {
+            color: var(--text-dark);
+        }
+
         .header {
-            background: white;
+            background: var(--light-color);
             padding: 30px;
             border-radius: 15px;
             margin-bottom: 30px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             position: relative;
             overflow: hidden;
+            color: var(--text-dark);
         }
 
         .header::before {
@@ -128,7 +171,7 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             gap: 20px;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid var(--light-color);
+            border-top: 1px solid var(--background-color);
         }
 
         .info-item {
@@ -136,7 +179,7 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             align-items: center;
             gap: 10px;
             padding: 15px;
-            background: var(--light-color);
+            background: var(--background-color);
             border-radius: 10px;
             transition: all 0.3s ease;
         }
@@ -147,7 +190,7 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .students-list {
-            background: white;
+            background: var(--light-color);
             border-radius: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             overflow: hidden;
@@ -157,12 +200,12 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             display: flex;
             align-items: center;
             padding: 20px;
-            border-bottom: 1px solid var(--light-color);
+            border-bottom: 1px solid var(--background-color);
             transition: all 0.3s ease;
         }
 
         .student-item:hover {
-            background-color: #f8f9fa;
+            background-color: rgba(0, 0, 0, 0.1);
             transform: translateX(5px);
         }
 
@@ -205,18 +248,18 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         .score-badge.high {
-            background: #d4edda;
-            color: #155724;
+            background: var(--success-color);
+            color: white;
         }
 
         .score-badge.medium {
-            background: #fff3cd;
-            color: #856404;
+            background: var(--warning-color);
+            color: var(--text-dark);
         }
 
         .score-badge.low {
-            background: #f8d7da;
-            color: #721c24;
+            background: var(--danger-color);
+            color: white;
         }
 
         .btn {
@@ -250,9 +293,10 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            background: white;
+            background: var(--light-color);
             border-radius: 15px;
             margin-top: 30px;
+            color: var(--text-dark);
         }
 
         .empty-state i {
@@ -285,6 +329,10 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .submission-date {
                 margin-right: 0;
             }
+            
+            .actions {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
@@ -302,26 +350,26 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <div class="header">
             <h1>
-                <i class='bx bx-file'></i>
+                <i class="fas fa-file-alt"></i>
                 <?php echo htmlspecialchars($exam['title']); ?>
             </h1>
             <div class="exam-info">
                 <div class="info-item">
-                    <i class='bx bx-help-circle'></i>
+                    <i class="fas fa-question-circle"></i>
                     <div>
                         <small>Questions</small>
                         <div><?php echo $exam['total_questions']; ?></div>
                     </div>
                 </div>
                 <div class="info-item">
-                    <i class='bx bx-user'></i>
+                    <i class="fas fa-users"></i>
                     <div>
                         <small>Submissions</small>
                         <div><?php echo count($attempts); ?></div>
                     </div>
                 </div>
                 <div class="info-item">
-                    <i class='bx bx-time'></i>
+                    <i class="fas fa-clock"></i>
                     <div>
                         <small>Duration</small>
                         <div><?php echo $exam['duration_minutes']; ?> minutes</div>
@@ -330,17 +378,17 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
             <div class="actions">
                 <a href="exams.php" class="btn btn-secondary">
-                    <i class='bx bx-arrow-back'></i> Back to Exams
+                    <i class="fas fa-arrow-left"></i> Back to Exams
                 </a>
                 <a href="edit-exam.php?id=<?php echo $examId; ?>" class="btn btn-primary">
-                    <i class='bx bx-edit'></i> Edit Exam
+                    <i class="fas fa-edit"></i> Edit Exam
                 </a>
             </div>
         </div>
 
         <?php if (empty($attempts)): ?>
             <div class="empty-state">
-                <i class='bx bx-info-circle'></i>
+                <i class="fas fa-info-circle"></i>
                 <h2>No Submissions Yet</h2>
                 <p>No students have completed this exam yet.</p>
             </div>
@@ -353,13 +401,13 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <?php echo htmlspecialchars($attempt['full_name']); ?>
                             </div>
                             <div class="student-class">
-                                <i class='bx bx-book'></i>
+                                <i class="fas fa-book"></i>
                                 <?php echo htmlspecialchars($attempt['classroom_name']); ?>
                             </div>
                         </div>
                         
                         <div class="submission-date">
-                            <i class='bx bx-calendar'></i>
+                            <i class="fas fa-calendar-alt"></i>
                             <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?>
                         </div>
 
@@ -367,17 +415,28 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             echo $attempt['score'] >= 80 ? 'high' : 
                                  ($attempt['score'] >= 60 ? 'medium' : 'low'); 
                         ?>">
-                            <i class='bx bx-badge'></i>
+                            <i class="fas fa-award"></i>
                             <?php echo number_format($attempt['score'], 1); ?>%
                         </div>
                         
                         <a href="view-attempt.php?id=<?php echo $attempt['attempt_id']; ?>" class="btn btn-primary">
-                            <i class='bx bx-show'></i> View Details
+                            <i class="fas fa-eye"></i> View Details
                         </a>
                     </div>
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check for saved theme in localStorage
+            const theme = localStorage.getItem('theme') || 'light';
+            document.body.dataset.theme = theme;
+            
+            // This ensures the theme toggle in the navbar will work with this page
+            // The actual toggle button is handled in teacher-nav.php
+        });
+    </script>
 </body>
 </html>

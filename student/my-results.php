@@ -87,6 +87,30 @@ try {
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f1c40f;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --background-color: #f5f6fa;
+            --accent-color: #3498db; /* Blue accent color */
+        }
+
+        [data-theme="dark"] {
+            --background-color: #1a1a1a;
+            --text-color: #ffffff;
+            --primary-color: #5588ff;
+            --secondary-color: #44bb77;
+            --success-color: #44bb77;
+            --danger-color: #ff5555;
+            --warning-color: #ffcc00;
+            --light-color: #333333;
+            --dark-color: #ffffff;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -96,8 +120,8 @@ try {
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
-            background-color: #f5f6fa;
-            color: #2c3e50;
+            background-color: var(--background-color);
+            color: var(--dark-color);
         }
 
         .container {
@@ -114,19 +138,19 @@ try {
         }
 
         .stat-card {
-            background: white;
+            background: var(--light-color);
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
         }
 
         .result-card {
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .exam-header {
@@ -140,13 +164,13 @@ try {
 
         .exam-title {
             font-size: 1.5em;
-            color: var(--text-dark);
+            color: var(--text-color);
         }
 
         .exam-score {
             font-size: 2em;
             font-weight: bold;
-            color: var(--primary-color);
+            color: var(--accent-color);
         }
 
         .exam-meta {
@@ -171,7 +195,7 @@ try {
 
         .meta-value {
             font-weight: 500;
-            color: var(--text-dark);
+            color: var(--text-color);
         }
 
         .answers-section {
@@ -187,7 +211,7 @@ try {
 
         .question-text {
             font-weight: 500;
-            color: var(--text-dark);
+            color: var(--text-color);
             margin-bottom: 10px;
         }
 
@@ -233,24 +257,24 @@ try {
         .no-results {
             text-align: center;
             padding: 40px;
-            background: white;
+            background: var(--light-color);
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .no-results i {
             font-size: 48px;
-            color: #3498db;
+            color: var(--accent-color);
             margin-bottom: 20px;
         }
 
         .no-results h3 {
             margin-bottom: 10px;
-            color: #2c3e50;
+            color: var(--primary-color);
         }
 
         .no-results p {
-            color: #666;
+            color: var(--text-color);
         }
 
         @media (max-width: 768px) {
@@ -398,7 +422,7 @@ try {
             const container = document.getElementById(`answers-${attemptId}`);
             container.classList.toggle('show');
             
-            const button = container.previousElementSibling;
+            const button = container.previousElement;
             const icon = button.querySelector('i');
             if (container.classList.contains('show')) {
                 icon.className = 'bx bx-chevron-up';
