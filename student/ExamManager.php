@@ -30,7 +30,7 @@ class ExamManager {
                 throw new Exception('No attempts remaining for this exam.');
             }
 
-            // Create 
+            // Create new exam attempt
             $stmt = $this->conn->prepare("
                 INSERT INTO exam_attempts (exam_id, student_id, start_time)
                 VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -78,30 +78,72 @@ class ExamManager {
                     
                     $isCorrect = $result['is_correct'] ?? 0;
                     $pointsEarned = $isCorrect ? $question['points'] : 0;
-                    break;
+
+                    // Insert into mcq_student_answers
+                    $stmt = $this->conn->prepare("
+                        INSERT INTO mcq_student_answers 
+                        (attempt_id, question_id, student_id, selected_option_id, is_correct, points_earned)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE
+                        selected_option_id = VALUES(selected_option_id),
+                        is_correct = VALUES(is_correct),
+                        points_earned = VALUES(points_earned)
+                    ");
+                    
+                    return $stmt->execute([
+                        $attemptId,
+                        $questionId,
+                        $this->userId,
+                        $selectedOptionId,
+                        $isCorrect,
+                        $pointsEarned
+                    ]);
 
                 case 'true_false':
-                    $answerText = $answer; // Store the actual true/false answer
+                    $answerValue = $answer; // Store the actual true/false answer
                     $selectedOptionId = null;
+                    
                     // Ensure both values are strings and lowercase for comparison
                     $studentAnswer = strtolower(trim($answer));
                     $correctAnswer = strtolower(trim($question['correct_answer']));
                     
-                    // Debug logging
-                    error_log("True/False Question ID: " . $questionId);
-                    error_log("Student Answer: " . $studentAnswer);
-                    error_log("Correct Answer: " . $correctAnswer);
+                    // Add validation for question's correct answer
+                    if (!in_array($correctAnswer, ['true', 'false'])) {
+                        error_log("Invalid correct answer for true/false question {$questionId}: " . $correctAnswer);
+                        throw new Exception('Question has invalid correct answer');
+                    }
                     
-                    // Validate that both values are either 'true' or 'false'
-                    if (!in_array($studentAnswer, ['true', 'false']) || !in_array($correctAnswer, ['true', 'false'])) {
-                        error_log("Invalid true/false values - Student: $studentAnswer, Correct: $correctAnswer");
+                    // Validate student answer
+                    if (!in_array($studentAnswer, ['true', 'false'])) {
+                        error_log("Invalid student answer for true/false question {$questionId}: " . $studentAnswer);
                         throw new Exception('Invalid true/false answer value');
                     }
                     
                     $isCorrect = ($studentAnswer === $correctAnswer);
                     $pointsEarned = $isCorrect ? $question['points'] : 0;
-                    error_log("Is Correct: " . ($isCorrect ? 'Yes' : 'No') . ", Points Earned: " . $pointsEarned);
-                    break;
+
+                    // Insert into true_false_student_answers
+                    $stmt = $this->conn->prepare("
+                        INSERT INTO true_false_student_answers 
+                        (attempt_id, question_id, student_id, answer_value, is_correct, points_earned)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE
+                        answer_value = VALUES(answer_value),
+                        is_correct = VALUES(is_correct),
+                        points_earned = VALUES(points_earned)
+                    ");
+                    
+                    // Add debugging output
+                    error_log("Storing true/false answer for question {$questionId} with value: " . $answerValue);
+                    
+                    return $stmt->execute([
+                        $attemptId,
+                        $questionId,
+                        $this->userId,
+                        $answerValue,
+                        $isCorrect,
+                        $pointsEarned
+                    ]);
 
                 case 'open':
                 case 'code':
@@ -109,37 +151,35 @@ class ExamManager {
                     $answerText = $answer;
                     $isCorrect = null; // Will be graded by teacher
                     $pointsEarned = null;
-                    break;
+
+                    // Insert into student_answers (no change needed for open and code questions)
+                    $stmt = $this->conn->prepare("
+                        INSERT INTO student_answers 
+                        (attempt_id, question_id, student_id, answer_type, answer_text, is_correct, points_earned)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        ON DUPLICATE KEY UPDATE
+                        answer_text = VALUES(answer_text),
+                        is_correct = VALUES(is_correct),
+                        points_earned = VALUES(points_earned)
+                    ");
+                    
+                    return $stmt->execute([
+                        $attemptId,
+                        $questionId,
+                        $this->userId,
+                        $question['question_type'],
+                        $answerText,
+                        $isCorrect,
+                        $pointsEarned
+                    ]);
 
                 default:
                     throw new Exception('Invalid question type.');
             }
 
-            // Save the answer
-            $stmt = $this->conn->prepare("
-                INSERT INTO student_answers 
-                (attempt_id, question_id, student_id, answer_type, selected_option_id, answer_text, is_correct, points_earned)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                selected_option_id = VALUES(selected_option_id),
-                answer_text = VALUES(answer_text),
-                is_correct = VALUES(is_correct),
-                points_earned = VALUES(points_earned)
-            ");
-            
-            return $stmt->execute([
-                $attemptId,
-                $questionId,
-                $this->userId,
-                $question['question_type'],
-                $selectedOptionId,
-                $answerText,
-                $isCorrect,
-                $pointsEarned
-            ]);
-
         } catch (Exception $e) {
-            error_log("Error in submitAnswer: " . $e->getMessage());
+            // Add detailed error logging
+            error_log("Error in submitAnswer for question {$questionId}: " . $e->getMessage());
             throw $e;
         }
     }

@@ -50,70 +50,102 @@ $stmt = $conn->prepare("
 $stmt->execute([$attemptId, $attempt['exam_id']]);
 $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $conn->beginTransaction();
-
+        
         $totalPoints = 0;
         $maxPoints = 0;
 
-        // Update each answer
-        foreach ($questions as $question) {
-            $answerId = $question['answer_id'];
-            if (isset($_POST['points'][$answerId])) {
-                $points = min(floatval($_POST['points'][$answerId]), $question['max_points']);
-                $comment = $_POST['comments'][$answerId] ?? '';
-
-                $stmt = $conn->prepare("
-                    UPDATE student_answers 
-                    SET points_earned = ?,
-                        teacher_comment = ?,
-                        graded_at = CURRENT_TIMESTAMP,
-                        graded_by = ?
-                    WHERE id = ?
-                ");
-                $stmt->execute([$points, $comment, $_SESSION['user_id'], $answerId]);
-
+        // Save grades for each answer
+        foreach ($allAnswers as $questionId => $answer) {
+            if (isset($_POST['points'][$questionId])) {
+                $points = min(floatval($_POST['points'][$questionId]), $answer['max_points']);
+                $comment = $_POST['comments'][$questionId] ?? '';
+                
+                // Update different tables based on question type
+                switch ($answer['question_type']) {
+                    case 'mcq':
+                        $stmt = $conn->prepare("
+                            UPDATE mcq_student_answers 
+                            SET points_earned = ?,
+                                graded_by = ?,
+                                graded_at = NOW()
+                            WHERE attempt_id = ? AND question_id = ?
+                        ");
+                        $stmt->execute([$points, $_SESSION['user_id'], $attemptId, $questionId]);
+                        break;
+                        
+                    case 'true_false':
+                        $stmt = $conn->prepare("
+                            UPDATE true_false_student_answers 
+                            SET points_earned = ?,
+                                graded_by = ?,
+                                graded_at = NOW()
+                            WHERE attempt_id = ? AND question_id = ?
+                        ");
+                        $stmt->execute([$points, $_SESSION['user_id'], $attemptId, $questionId]);
+                        break;
+                        
+                    case 'open':
+                    case 'code':
+                        $stmt = $conn->prepare("
+                            UPDATE student_answers 
+                            SET points_earned = ?,
+                                teacher_comment = ?,
+                                graded_by = ?,
+                                graded_at = NOW()
+                            WHERE attempt_id = ? AND question_id = ?
+                        ");
+                        $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
+                        break;
+                }
+                
                 $totalPoints += $points;
+                $maxPoints += $answer['max_points'];
             }
-            $maxPoints += $question['max_points'];
         }
 
-        // Calculate final score as percentage
-        $finalScore = ($maxPoints > 0) ? ($totalPoints / $maxPoints) * 100 : 0;
+        // Calculate final score as total points earned
+        $finalScore = $totalPoints;
 
-        // Update attempt
+        // Update the exam_attempts table with the final grade
         $stmt = $conn->prepare("
             UPDATE exam_attempts 
             SET score = ?,
                 teacher_feedback = ?,
                 published = ?,
-                updated_at = CURRENT_TIMESTAMP
+                graded_at = NOW(),
+                graded_by = ?
             WHERE id = ?
         ");
         $stmt->execute([
             $finalScore,
             $_POST['overall_feedback'],
             isset($_POST['publish']) ? 1 : 0,
+            $_SESSION['user_id'],
             $attemptId
         ]);
 
         $conn->commit();
+        
+        // Store confirmation data in the session
         $_SESSION['grade_confirmation'] = [
             'exam_title' => $attempt['exam_title'],
             'student_name' => $attempt['student_name'],
             'score' => $finalScore,
             'published' => isset($_POST['publish']),
-            'attempt_id' => $attemptId
+            'attempt_id' => $attemptId,
+            'exam_id' => $attempt['exam_id']
         ];
+        
+        // Redirect to the confirmation page
         header("Location: grade-confirmation.php");
-        exit;
-
+        exit();
+        
     } catch (Exception $e) {
         $conn->rollBack();
-        error_log("Grading error: " . $e->getMessage());
-        setFlashMessage('error', 'Error saving grades');
+        setFlashMessage('error', 'Failed to save grades: ' . $e->getMessage());
     }
 }
 ?>

@@ -1,15 +1,33 @@
 <?php
-require_once '../includes/functions.php';
-checkRole('teacher');
+session_start(); // Ensure session is started
+require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/db.php';
 
+checkRole('teacher'); // Ensure only teachers can access this page
+
+// Check if grading confirmation data exists in the session
 if (!isset($_SESSION['grade_confirmation'])) {
+    setFlashMessage('error', 'No grading confirmation data found. Redirecting to exams page.');
     header('Location: exams.php');
     exit;
 }
 
+// Retrieve confirmation data from the session
 $confirmation = $_SESSION['grade_confirmation'];
-unset($_SESSION['grade_confirmation']); // Clear the session data
+unset($_SESSION['grade_confirmation']); // Clear the session data after retrieval
+
+// Fetch the total points for the exam
+$conn = getDBConnection();
+$stmt = $conn->prepare("SELECT total_points FROM exams WHERE id = ?");
+$stmt->execute([$confirmation['exam_id']]);
+$exam = $stmt->fetch(PDO::FETCH_ASSOC);
+$total_points = $exam['total_points'] ?? 100; // Default to 100 if not found
+
+// Calculate the final grade as total points earned / total exam grade
+$final_grade = isset($confirmation['score']) ? $confirmation['score'] : 0;
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -17,7 +35,7 @@ unset($_SESSION['grade_confirmation']); // Clear the session data
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grading Confirmation - Quiztify</title>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <style>
         .container {
             max-width: 800px;
@@ -111,6 +129,12 @@ unset($_SESSION['grade_confirmation']); // Clear the session data
         .btn:hover {
             opacity: 0.9;
         }
+
+        .final-grade-display {
+            font-size: 1.2em;
+            margin: 15px 0;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
@@ -120,35 +144,42 @@ unset($_SESSION['grade_confirmation']); // Clear the session data
             <h1 class="confirmation-title">Grades Saved Successfully!</h1>
 
             <div class="confirmation-details">
-                <div class="detail-item">
-                    <span class="detail-label">Exam:</span>
-                    <?php echo htmlspecialchars($confirmation['exam_title']); ?>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Student:</span>
-                    <?php echo htmlspecialchars($confirmation['student_name']); ?>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Final Score:</span>
-                    <?php echo number_format($confirmation['score'], 1); ?>%
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Status:</span>
-                    <span class="status-badge <?php echo $confirmation['published'] ? 'status-published' : 'status-draft'; ?>">
-                        <?php echo $confirmation['published'] ? 'Published' : 'Saved as Draft'; ?>
-                    </span>
-                </div>
-            </div>
-
+    <div class="detail-item">
+        <span class="detail-label">Exam:</span>
+        <?php echo isset($confirmation['exam_title']) ? htmlspecialchars($confirmation['exam_title']) : 'N/A'; ?>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Student:</span>
+        <?php echo isset($confirmation['student_name']) ? htmlspecialchars($confirmation['student_name']) : 'N/A'; ?>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Final Score:</span>
+        <div class="final-grade-display">
+            <?php 
+            if (isset($confirmation['score']) && isset($total_points)) {
+                echo number_format($confirmation['score'], 1) . "/" . $total_points;
+            } else {
+                echo "N/A";
+            }
+            ?>
+        </div>
+    </div>
+    <div class="detail-item">
+        <span class="detail-label">Status:</span>
+        <span class="status-badge <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'status-published' : 'status-draft') : 'status-draft'; ?>">
+            <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'Published' : 'Saved as Draft') : 'Saved as Draft'; ?>
+        </span>
+    </div>
+</div>
             <div class="action-buttons">
-                <a href="grade-exam.php?id=<?php echo $confirmation['attempt_id']; ?>" class="btn btn-primary">
+                <a href="grade-exam.php?id=<?php echo isset($confirmation['attempt_id']) ? $confirmation['attempt_id'] : ''; ?>" class="btn btn-primary">
                     <i class='bx bx-edit'></i> Continue Editing
                 </a>
-                <a href="exams.php" class="btn btn-secondary">
-                    <i class='bx bx-arrow-back'></i> Back to Exams
+                <a href="view-exam.php?id=<?php echo isset($confirmation['exam_id']) ? $confirmation['exam_id'] : ''; ?>" class="btn btn-secondary">
+                    <i class='bx bx-arrow-back'></i> Back to Exam Results
                 </a>
             </div>
         </div>
     </div>
 </body>
-</html> 
+</html>
