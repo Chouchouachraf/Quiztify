@@ -273,7 +273,7 @@ try {
         <?php include '../includes/teacher-nav.php'; ?>
 
         <div class="dashboard-header">
-            <h1>Welcome, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</h1>
+            <h1>Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Teacher'); ?>!</h1>
         </div>
 
         <?php if ($flash = getFlashMessage()): ?>

@@ -1,7 +1,4 @@
 <?php
-// Start the session
-session_start();
-
 // Get current page for active state
 $current_page = basename($_SERVER['PHP_SELF']);
 

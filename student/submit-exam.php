@@ -19,9 +19,29 @@ try {
         throw new Exception('No attempt ID provided');
     }
 
+    // Log attempt verification details
+    error_log("Verifying attempt ID: " . $attemptId . " for user: " . $_SESSION['user_id']);
+
+    // First check if attempt exists at all
+    $checkStmt = $conn->prepare("SELECT id, student_id, is_completed FROM exam_attempts WHERE id = ?");
+    $checkStmt->execute([$attemptId]);
+    $basicAttemptInfo = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$basicAttemptInfo) {
+        throw new Exception('Attempt ID does not exist');
+    }
+
+    if ($basicAttemptInfo['student_id'] != $_SESSION['user_id']) {
+        throw new Exception('Attempt belongs to different student');
+    }
+
+    if ($basicAttemptInfo['is_completed']) {
+        throw new Exception('Exam has already been submitted');
+    }
+
     // Verify the attempt and time
     $stmt = $conn->prepare("
-        SELECT ea.*, e.duration_minutes
+        SELECT ea.*, e.duration_minutes, e.end_date
         FROM exam_attempts ea
         JOIN exams e ON ea.exam_id = e.id
         WHERE ea.id = ? AND ea.student_id = ? AND ea.is_completed = 0
@@ -31,6 +51,24 @@ try {
 
     if (!$attempt) {
         throw new Exception('Invalid attempt or exam already submitted');
+    }
+
+    // Check if exam has expired
+    $now = new DateTime();
+    $endDate = new DateTime($attempt['end_date']);
+    if ($now > $endDate) {
+        throw new Exception('Exam submission period has ended');
+    }
+
+    // Check if duration has exceeded (if exam has timer)
+    if ($attempt['duration_minutes']) {
+        $startTime = new DateTime($attempt['start_time']);
+        $timeDiff = $now->diff($startTime);
+        $minutesElapsed = ($timeDiff->days * 24 * 60) + ($timeDiff->h * 60) + $timeDiff->i;
+        
+        if ($minutesElapsed > $attempt['duration_minutes']) {
+            throw new Exception('Exam time limit exceeded');
+        }
     }
 
     // Process answers

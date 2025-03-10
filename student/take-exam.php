@@ -44,6 +44,19 @@ try {
         throw new Exception('Exam not found or access denied.');
     }
 
+    // Check if exam is still available
+    $now = new DateTime();
+    $startDate = new DateTime($exam['start_date']);
+    $endDate = new DateTime($exam['end_date']);
+
+    if ($now < $startDate) {
+        throw new Exception('This exam has not started yet.');
+    }
+
+    if ($now > $endDate) {
+        throw new Exception('This exam has ended.');
+    }
+
     // Get questions
     $stmt = $conn->prepare("
         SELECT 
@@ -62,20 +75,46 @@ try {
     $stmt->execute([$examId]);
     $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Start new attempt if not already started
-    if (!isset($_SESSION['current_attempt'])) {
+    // Check for existing incomplete attempt
+    $stmt = $conn->prepare("
+        SELECT id, start_time 
+        FROM exam_attempts 
+        WHERE exam_id = ? AND student_id = ? AND is_completed = 0
+        ORDER BY start_time DESC 
+        LIMIT 1
+    ");
+    $stmt->execute([$examId, $_SESSION['user_id']]);
+    $existingAttempt = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Start new attempt if no incomplete attempt exists
+    if (!$existingAttempt) {
+        if (isset($_SESSION['current_attempt'])) {
+            // Clear any stale attempt from session
+            unset($_SESSION['current_attempt']);
+        }
+        
         $examManager->startExam($examId);
         
         // Get the new attempt ID
         $stmt = $conn->prepare("
-            SELECT id FROM exam_attempts 
+            SELECT id, start_time FROM exam_attempts 
             WHERE exam_id = ? AND student_id = ? 
             AND is_completed = 0 
             ORDER BY start_time DESC LIMIT 1
         ");
         $stmt->execute([$examId, $_SESSION['user_id']]);
         $attempt = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$attempt) {
+            throw new Exception('Failed to create exam attempt.');
+        }
+        
         $_SESSION['current_attempt'] = $attempt['id'];
+        $_SESSION['exam_start_time'] = $attempt['start_time'];
+    } else {
+        // Use existing incomplete attempt
+        $_SESSION['current_attempt'] = $existingAttempt['id'];
+        $_SESSION['exam_start_time'] = $existingAttempt['start_time'];
     }
 
 } catch (Exception $e) {
@@ -352,7 +391,7 @@ try {
             <div class="progress" id="progressBar" style="width: 0%"></div>
         </div>
 
-        <form id="examForm" method="POST" action="submit-exam.php" onsubmit="return confirmSubmit()">
+        <form id="examForm" method="POST" action="submit-exam.php">
             <input type="hidden" name="attempt_id" value="<?php echo $_SESSION['current_attempt']; ?>">
             
             <?php foreach ($questions as $index => $question): ?>
@@ -392,7 +431,7 @@ try {
                                 <input type="radio" 
                                        id="true_<?php echo $question['id']; ?>"
                                        name="answers[<?php echo $question['id']; ?>]" 
-                                       value="1" 
+                                       value="true" 
                                        required
                                        onchange="updateProgress()">
                                 <label for="true_<?php echo $question['id']; ?>">True</label>
@@ -401,7 +440,7 @@ try {
                                 <input type="radio" 
                                        id="false_<?php echo $question['id']; ?>"
                                        name="answers[<?php echo $question['id']; ?>]" 
-                                       value="0" 
+                                       value="false" 
                                        required
                                        onchange="updateProgress()">
                                 <label for="false_<?php echo $question['id']; ?>">False</label>
@@ -425,93 +464,5 @@ try {
             </div>
         </form>
     </div>
-
-    <script>
-        // Function to log violations
-        function logViolation(type) {
-            fetch('log-violation.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    attempt_id: '<?php echo $_SESSION['current_attempt']; ?>',
-                    violation_type: type
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    console.log('Violation logged:', type);
-                    alert('Warning: Cheating is detected and logged. Please adhere to exam rules.');
-                } else {
-                    console.error('Failed to log violation:', data.message);
-                }
-            })
-            .catch(error => console.error('Error logging violation:', error));
-        }
-
-        // Event listeners for detecting violations
-        document.addEventListener('visibilitychange', function() {
-            if (document.visibilityState === 'hidden') {
-                logViolation('tab_switch');
-            }
-        });
-
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            logViolation('right_click');
-            return false;
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey && (e.key === 'c' || e.key === 'v')) || e.key === 'PrintScreen') {
-                e.preventDefault();
-                logViolation('copy_paste');
-                return false;
-            }
-        });
-
-        window.addEventListener('beforeunload', function(e) {
-            if (isExamActive) {
-                e.preventDefault();
-                e.returnValue = '';
-                logViolation('navigation_attempt');
-                return '';
-            }
-        });
-
-        window.addEventListener('blur', function() {
-            if (isExamActive && !isWarningActive) {
-                logViolation('tab_switch');
-            }
-        });
-
-        // Timer logic
-        let timeRemaining = <?php echo $exam['duration_minutes'] * 60; ?>; // Convert minutes to seconds
-        const timerElement = document.getElementById('timer').querySelector('span');
-
-        function updateTimer() {
-            const minutes = Math.floor(timeRemaining / 60);
-            const seconds = timeRemaining % 60;
-            timerElement.textContent = `Time remaining: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
-            if (timeRemaining <= 0) {
-                clearInterval(timerInterval);
-                timerElement.textContent = 'Time is up!';
-                // Automatically submit the exam form
-                document.getElementById('examForm').submit();
-            }
-
-            if (timeRemaining <= 300) { // 5 minutes warning
-                document.getElementById('timer').classList.add('warning');
-            }
-
-            timeRemaining--;
-        }
-
-        const timerInterval = setInterval(updateTimer, 1000);
-        updateTimer(); // Initial call to display the timer immediately
-    </script>
 </body>
 </html>

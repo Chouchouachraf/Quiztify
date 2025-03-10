@@ -132,9 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Insert question
             $correct_answer = null;
             if ($q['type'] === 'open') {
-                $correct_answer = $q['correct_answer'];
+                $correct_answer = $q['correct_answer'] ?? null;
             } elseif ($q['type'] === 'true_false') {
-                $correct_answer = $q['correct_option']; // 'true' or 'false'
+                // Ensure the correct_option is explicitly 'true' or 'false'
+                $correct_answer = isset($q['correct_option']) && $q['correct_option'] === 'true' ? 'true' : 'false';
             }
 
             $stmt->execute([

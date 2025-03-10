@@ -20,13 +20,12 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `quiztifydatabase`
 --
-
+USE quiztifydatabase;
 -- --------------------------------------------------------
 
 --
 -- Structure de la table `classrooms`
 --
-
 CREATE TABLE `classrooms` (
   `id` int(11) NOT NULL,
   `teacher_id` int(11) NOT NULL,
@@ -94,7 +93,7 @@ CREATE TABLE `exams` (
 
 INSERT INTO `exams` (`id`, `title`, `description`, `is_published`, `start_date`, `end_date`, `created_by`, `created_at`, `total_points`, `attempts_allowed`, `passing_score`, `has_timer`, `duration_minutes`) VALUES
 (61, 'test', 'poiuyt', 1, '2025-03-10 12:00:00', '2025-03-10 13:00:00', 7, '2025-03-10 06:23:46', '20', 1, 60, 1, 60),
-(62, 'L7WA', 'AAA', 1, '2025-03-10 12:00:00', '2025-03-10 13:00:00', 7, '2025-03-10 06:28:09', '20', 1, 60, 1, 60);
+(62, 'AAA', 'AAA', 1, '2025-03-10 12:00:00', '2025-03-10 13:00:00', 7, '2025-03-10 06:28:09', '20', 1, 60, 1, 60);
 
 -- --------------------------------------------------------
 

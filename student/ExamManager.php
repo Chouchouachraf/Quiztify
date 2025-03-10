@@ -30,7 +30,7 @@ class ExamManager {
                 throw new Exception('No attempts remaining for this exam.');
             }
 
-            // Create new attempt
+            // Create 
             $stmt = $this->conn->prepare("
                 INSERT INTO exam_attempts (exam_id, student_id, start_time)
                 VALUES (?, ?, CURRENT_TIMESTAMP)
@@ -81,10 +81,26 @@ class ExamManager {
                     break;
 
                 case 'true_false':
-                    $selectedOptionId = $answer; // This should reference the true/false option in mcq_options
-                    $answerText = null;
-                    $isCorrect = ($selectedOptionId == $question['correct_answer']);
+                    $answerText = $answer; // Store the actual true/false answer
+                    $selectedOptionId = null;
+                    // Ensure both values are strings and lowercase for comparison
+                    $studentAnswer = strtolower(trim($answer));
+                    $correctAnswer = strtolower(trim($question['correct_answer']));
+                    
+                    // Debug logging
+                    error_log("True/False Question ID: " . $questionId);
+                    error_log("Student Answer: " . $studentAnswer);
+                    error_log("Correct Answer: " . $correctAnswer);
+                    
+                    // Validate that both values are either 'true' or 'false'
+                    if (!in_array($studentAnswer, ['true', 'false']) || !in_array($correctAnswer, ['true', 'false'])) {
+                        error_log("Invalid true/false values - Student: $studentAnswer, Correct: $correctAnswer");
+                        throw new Exception('Invalid true/false answer value');
+                    }
+                    
+                    $isCorrect = ($studentAnswer === $correctAnswer);
                     $pointsEarned = $isCorrect ? $question['points'] : 0;
+                    error_log("Is Correct: " . ($isCorrect ? 'Yes' : 'No') . ", Points Earned: " . $pointsEarned);
                     break;
 
                 case 'open':
