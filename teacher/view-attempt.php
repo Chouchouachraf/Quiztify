@@ -46,38 +46,23 @@ $stmt->execute([$attempt['exam_id']]);
 $questions = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch answers for each question type
-$mcqAnswers = [];
-$trueFalseAnswers = [];
-
-// Fetch MCQ answers with option text
-$stmt = $conn->prepare("
-    SELECT 
-        msa.*,
-        q.points as max_points,
-        mo.option_text as selected_option_text
-    FROM mcq_student_answers msa
-    JOIN questions q ON msa.question_id = q.id
-    LEFT JOIN mcq_options mo ON msa.selected_option_id = mo.id
-    WHERE msa.attempt_id = ?
-");
-$stmt->execute([$attemptId]);
-$mcqAnswers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fetch true/false answers
-$stmt = $conn->prepare("
-    SELECT 
-        tfsa.*,
-        q.points as max_points
-    FROM true_false_student_answers tfsa
-    JOIN questions q ON tfsa.question_id = q.id
-    WHERE tfsa.attempt_id = ?
-");
-$stmt->execute([$attemptId]);
-$trueFalseAnswers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Combine all answers into a single array indexed by question_id
 $allAnswers = [];
 
+// Fetch all student answers
+$stmt = $conn->prepare("
+    SELECT 
+        sa.*,
+        q.points as max_points,
+        mo.option_text as selected_option_text
+    FROM student_answers sa
+    JOIN questions q ON sa.question_id = q.id
+    LEFT JOIN mcq_options mo ON sa.selected_option_id = mo.id
+    WHERE sa.attempt_id = ?
+");
+$stmt->execute([$attemptId]);
+$studentAnswers = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Combine all answers into a single array indexed by question_id
 foreach ($questions as $question) {
     $questionId = $question['id'];
     $allAnswers[$questionId] = [
@@ -93,55 +78,27 @@ foreach ($questions as $question) {
     ];
 }
 
-// Process MCQ answers
-foreach ($mcqAnswers as $mcqAnswer) {
-    $questionId = $mcqAnswer['question_id'];
+// Process all answers
+foreach ($studentAnswers as $answer) {
+    $questionId = $answer['question_id'];
     if (isset($allAnswers[$questionId])) {
-        $allAnswers[$questionId]['answer'] = $mcqAnswer['selected_option_id'];
-        $allAnswers[$questionId]['points_earned'] = $mcqAnswer['points_earned'];
-        $allAnswers[$questionId]['is_correct'] = $mcqAnswer['is_correct'];
-        $allAnswers[$questionId]['selected_option_text'] = $mcqAnswer['selected_option_text'] ?? 'Option not found';
+        $allAnswers[$questionId]['answer'] = $answer['answer_type'] === 'mcq' ? 
+                                            $answer['selected_option_id'] : 
+                                            $answer['answer_text'];
+        $allAnswers[$questionId]['points_earned'] = $answer['points_earned'];
+        $allAnswers[$questionId]['teacher_comment'] = $answer['teacher_comment'];
+        $allAnswers[$questionId]['selected_option_text'] = $answer['selected_option_text'];
+        $allAnswers[$questionId]['is_correct'] = $answer['is_correct'];
+        $allAnswers[$questionId]['manual_grade'] = $answer['manual_grade'];
     }
 }
 
-// Process true/false answers
-foreach ($trueFalseAnswers as $tfAnswer) {
-    $questionId = $tfAnswer['question_id'];
-    if (isset($allAnswers[$questionId])) {
-        $allAnswers[$questionId]['answer'] = $tfAnswer['answer_value'];
-        $allAnswers[$questionId]['points_earned'] = $tfAnswer['points_earned'];
-        $allAnswers[$questionId]['is_correct'] = $tfAnswer['is_correct'];
-    }
-}
-
-// Process open answers
-$stmt = $conn->prepare("
-    SELECT 
-        sa.*,
-        q.points as max_points
-    FROM student_answers sa
-    JOIN questions q ON sa.question_id = q.id
-    WHERE sa.attempt_id = ?
-");
-$stmt->execute([$attemptId]);
-$openAnswers = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-foreach ($openAnswers as $openAnswer) {
-    $questionId = $openAnswer['question_id'];
-    if (isset($allAnswers[$questionId])) {
-        $allAnswers[$questionId]['answer'] = $openAnswer['answer_text'];
-        $allAnswers[$questionId]['points_earned'] = $openAnswer['points_earned'];
-        $allAnswers[$questionId]['teacher_comment'] = $openAnswer['teacher_comment'];
-    }
-}
-
-// Fetch existing final grade and feedback if available
-$finalGrade = [];
-$stmt = $conn->prepare("
-    SELECT * FROM exam_final_grades WHERE attempt_id = ?
-");
-$stmt->execute([$attemptId]);
-$finalGrade = $stmt->fetch(PDO::FETCH_ASSOC);
+// No need to fetch from exam_final_grades, use the attempt data directly
+$finalGrade = [
+    'final_score' => $attempt['score'],
+    'total_points' => $attempt['total_points'],
+    'overall_feedback' => $attempt['teacher_feedback']
+];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
@@ -156,51 +113,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $points = min(floatval($_POST['points'][$questionId]), $answer['max_points']);
                 $comment = $_POST['comments'][$questionId] ?? '';
                 
-                // Update different tables based on question type
-                switch ($answer['question_type']) {
-                    case 'mcq':
-                        $stmt = $conn->prepare("
-                            UPDATE mcq_student_answers 
-                            SET points_earned = ?,
-                                graded_by = ?,
-                                graded_at = NOW()
-                            WHERE attempt_id = ? AND question_id = ?
-                        ");
-                        $stmt->execute([$points, $_SESSION['user_id'], $attemptId, $questionId]);
-                        break;
-                        
-                    case 'true_false':
-                        $stmt = $conn->prepare("
-                            UPDATE true_false_student_answers 
-                            SET points_earned = ?,
-                                graded_by = ?,
-                                graded_at = NOW()
-                            WHERE attempt_id = ? AND question_id = ?
-                        ");
-                        $stmt->execute([$points, $_SESSION['user_id'], $attemptId, $questionId]);
-                        break;
-                        
-                    case 'open':
-                    case 'code':
-                        $stmt = $conn->prepare("
-                            UPDATE student_answers 
-                            SET points_earned = ?,
-                                teacher_comment = ?,
-                                graded_by = ?,
-                                graded_at = NOW()
-                            WHERE attempt_id = ? AND question_id = ?
-                        ");
-                        $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
-                        break;
-                }
+                // Update student_answers table for all question types
+                $stmt = $conn->prepare("
+                    UPDATE student_answers 
+                    SET points_earned = ?,
+                        teacher_comment = ?,
+                        graded_by = ?,
+                        graded_at = NOW()
+                    WHERE attempt_id = ? AND question_id = ?
+                ");
+                $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
                 
                 $totalPoints += $points;
                 $maxPoints += $answer['max_points'];
             }
         }
 
-        // Calculate final score as total points earned
-        $finalScore = $totalPoints;
+        // Use the final_score directly from the form
+        $finalScore = isset($_POST['final_score']) ? floatval($_POST['final_score']) : $totalPoints;
 
         // Update the exam_attempts table with the final grade
         $stmt = $conn->prepare("
@@ -220,25 +150,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $attemptId
         ]);
 
-        // Insert or update the exam_final_grades table
-        $stmt = $conn->prepare("
-            INSERT INTO exam_final_grades 
-                (attempt_id, final_score, total_points, overall_feedback)
-            VALUES 
-                (?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE
-                final_score = VALUES(final_score),
-                total_points = VALUES(total_points),
-                overall_feedback = VALUES(overall_feedback)
-        ");
-        $stmt->execute([
-            $attemptId,
-            $finalScore,
-            $attempt['total_points'],
-            $_POST['overall_feedback']
-        ]);
-
         $conn->commit();
+        
+        // Refresh the attempt data after saving
+        $stmt = $conn->prepare("
+            SELECT 
+                ea.*,
+                e.id as exam_id,
+                e.title as exam_title,
+                e.description as exam_description,
+                e.total_points,
+                u.full_name as student_name,
+                c.name as classroom_name
+            FROM exam_attempts ea
+            JOIN exams e ON ea.exam_id = e.id
+            JOIN users u ON ea.student_id = u.id
+            JOIN classroom_students cs ON u.id = cs.student_id
+            JOIN classrooms c ON cs.classroom_id = c.id
+            WHERE ea.id = ?
+        ");
+        $stmt->execute([$attemptId]);
+        $attempt = $stmt->fetch(PDO::FETCH_ASSOC);
         
         // Store confirmation data in the session
         $_SESSION['grade_confirmation'] = [
@@ -674,16 +606,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="info-card">
                 <div class="info-label">Current Score</div>
                 <div class="info-value">
-                    <?php if ($finalGrade): ?>
-                        <?= number_format($finalGrade['final_score'], 1) ?>/<?= $finalGrade['total_points'] ?>
+                    <?php if ($attempt['score'] !== null): ?>
+                        <?= number_format($attempt['score'], 1) ?>
                     <?php else: ?>
-                        <?= number_format($attempt['score'], 1) ?>/<?= $attempt['total_points'] ?>
+                        Not graded yet
                     <?php endif; ?>
                 </div>
             </div>
             <div class="info-card">
                 <div class="info-label">Submitted</div>
-                <div class="info-value"><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></div>
+                <div class="info-value">
+                    <?php if ($attempt['end_time']): ?>
+                        <?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?>
+                    <?php else: ?>
+                        Not submitted yet
+                    <?php endif; ?>
+                </div>
             </div>
             <div class="info-card">
                 <div class="info-label">Status</div>
@@ -724,7 +662,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <!-- Multiple Choice Answer -->
                                     <div class="mcq-option selected">
                                         <i class='bx bx-radio-circle-marked' style="margin-right: 10px;"></i>
-                                        <?= htmlspecialchars($answer['selected_option_text']) ?>
+                                        <?= htmlspecialchars($answer['selected_option_text'] ?? 'Option not found') ?>
                                         <?php if ($answer['is_correct']): ?>
                                             <i class='bx bx-check' style="color: var(--success-color); margin-left: 10px;"></i>
                                         <?php else: ?>
@@ -735,7 +673,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <!-- True/False Answer -->
                                     <div class="mcq-option selected">
                                         <i class='bx bx-radio-circle-marked' style="margin-right: 10px;"></i>
-                                        <?= htmlspecialchars($answer['answer']) ?>
+                                        <?= htmlspecialchars($answer['answer'] ?? 'No answer') ?>
                                         <?php if ($answer['is_correct']): ?>
                                             <i class='bx bx-check' style="color: var(--success-color); margin-left: 10px;"></i>
                                         <?php else: ?>
@@ -764,7 +702,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                            step="0.5"
                                            value="<?= $answer['points_earned'] ?? '' ?>"
                                            required>
-                                    <span>out of <?= $answer['max_points'] ?></span>
+                                    <span class="max-points" data-max="<?= $answer['max_points'] ?>">out of <?= $answer['max_points'] ?></span>
                                 </div>
                                 <div>
                                     <label for="comment-<?= $questionId ?>">
@@ -795,11 +733,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                name="final_score" 
                                class="points-input"
                                min="0" 
-                               max="<?= $attempt['total_points'] ?>" 
+                               max="100" 
                                step="0.1"
-                               value="<?= $finalGrade['final_score'] ?? $attempt['score'] ?? '' ?>"
-                               readonly>
-                        <small>Total points earned out of <?= $attempt['total_points'] ?></small>
+                               value="<?= $attempt['score'] ?? $totalPoints ?? 0 ?>"
+                               required>
+                        <small>Enter the final score</small>
                     </div>
                     <div>
                         <label for="overall_feedback">
@@ -810,7 +748,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             name="overall_feedback" 
                             class="feedback-input"
                             placeholder="Provide overall feedback for the student"
-                        ><?= $finalGrade['overall_feedback'] ?? $attempt['teacher_feedback'] ?? '' ?></textarea>
+                        ><?= $attempt['teacher_feedback'] ?? '' ?></textarea>
                     </div>
                 </div>
 
@@ -854,7 +792,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     totalEarned += earned;
                 });
                 
-                finalScoreInput.value = totalEarned.toFixed(1);
+                // Update the final score field with the total points earned
+                // Only update if the user hasn't manually changed it
+                if (!finalScoreInput.dataset.manuallyEdited) {
+                    finalScoreInput.value = totalEarned.toFixed(1);
+                }
             }
             
             // Calculate on page load
@@ -864,6 +806,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             pointsInputs.forEach(input => {
                 input.addEventListener('input', calculateTotalScore);
             });
+            
+            // Mark the final score as manually edited when the user changes it
+            finalScoreInput.addEventListener('input', function() {
+                finalScoreInput.dataset.manuallyEdited = 'true';
+            });
+            
+            // Add a button to recalculate the total
+            const recalculateButton = document.createElement('button');
+            recalculateButton.type = 'button';
+            recalculateButton.className = 'btn btn-secondary';
+            recalculateButton.style.marginLeft = '10px';
+            recalculateButton.innerHTML = '<i class="bx bx-refresh"></i> Recalculate';
+            recalculateButton.addEventListener('click', function() {
+                finalScoreInput.dataset.manuallyEdited = '';
+                calculateTotalScore();
+            });
+            
+            finalScoreInput.parentNode.appendChild(recalculateButton);
         });
     </script>
 </body>

@@ -9,11 +9,6 @@ try {
     $conn = getDBConnection();
     $student_id = $_SESSION['user_id'];
 
-    // Add helper function
-    function calculatePoints($percentage, $total_points) {
-        return ($percentage / 100) * $total_points;
-    }
-
     // Fetch all exam attempts with details and answers
     $stmt = $conn->prepare("
         SELECT 
@@ -50,7 +45,19 @@ try {
         LEFT JOIN questions q ON sa.question_id = q.id
         LEFT JOIN mcq_options mo ON sa.selected_option_id = mo.id
         WHERE ea.student_id = ? AND ea.is_completed = 1
-        GROUP BY ea.id
+        GROUP BY 
+            ea.id, 
+            ea.score, 
+            ea.start_time, 
+            ea.end_time, 
+            ea.published, 
+            ea.teacher_feedback, 
+            e.title, 
+            e.total_points, 
+            e.passing_score, 
+            u.full_name, 
+            c.name, 
+            c.department
         ORDER BY ea.end_time DESC
     ");
     $stmt->execute([$student_id]);
@@ -314,11 +321,11 @@ try {
                 <div class="stat-label">Total Exams</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?php echo number_format($average_score, 1); ?>%</div>
+                <div class="stat-value"><?php echo number_format($average_score, 1); ?></div>
                 <div class="stat-label">Average Score</div>
             </div>
             <div class="stat-card">
-                <div class="stat-value"><?php echo number_format($highest_score, 1); ?>%</div>
+                <div class="stat-value"><?php echo number_format($highest_score, 1); ?></div>
                 <div class="stat-label">Highest Score</div>
             </div>
         </div>
@@ -334,7 +341,7 @@ try {
                 <div class="result-card">
                     <div class="exam-header">
                         <div class="exam-title"><?php echo htmlspecialchars($attempt['exam_title']); ?></div>
-                        <div class="exam-score"><?php echo number_format(calculatePoints($attempt['score'], $attempt['total_points']), 1); ?>/<?php echo $attempt['total_points']; ?></div>
+                        <div class="exam-score"><?php echo number_format($attempt['score'], 1); ?></div>
                     </div>
 
                     <div class="exam-meta">
@@ -350,6 +357,16 @@ try {
                             <div class="meta-label">Submitted</div>
                             <div class="meta-value"><?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?></div>
                         </div>
+                        <div class="meta-item">
+                            <div class="meta-label">Score</div>
+                            <div class="meta-value">
+                                <div class="score-display">
+                                    <span class="score-value">
+                                        <?php echo number_format($attempt['score'], 1); ?>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <?php if ($attempt['teacher_feedback']): ?>
@@ -363,7 +380,7 @@ try {
                         <div class="score-section">
                             <div class="score-display">
                                 <span class="score-value">
-                                    <?php echo number_format(calculatePoints($attempt['score'], $attempt['total_points']), 1); ?>/<?php echo $attempt['total_points']; ?>
+                                    <?php echo number_format($attempt['score'], 1); ?>/<?php echo $attempt['total_points']; ?>
                                 </span>
                                 <small class="percentage">(<?php echo number_format($attempt['score'], 1); ?>%)</small>
                             </div>

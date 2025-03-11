@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../includes/functions.php';
 checkRole('teacher');
 
@@ -7,12 +8,17 @@ $conn = getDBConnection();
 
 // Get exam details
 $stmt = $conn->prepare("
-    SELECT e.*, 
-           COUNT(DISTINCT q.id) as total_questions
+    SELECT 
+        e.*,
+        COUNT(DISTINCT q.id) as total_questions
     FROM exams e
     LEFT JOIN questions q ON e.id = q.exam_id
     WHERE e.id = ? AND e.created_by = ?
-    GROUP BY e.id
+    GROUP BY 
+        e.id, e.title, e.description, e.is_published, 
+        e.start_date, e.end_date, e.created_by, 
+        e.created_at, e.total_points, e.attempts_allowed, 
+        e.passing_score, e.has_timer, e.duration_minutes
 ");
 $stmt->execute([$examId, $_SESSION['user_id']]);
 $exam = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -34,25 +40,46 @@ $orderBy = match($sort) {
     default => "u.full_name ASC"
 };
 
+// Modified query to show all students who have access to the exam
 $stmt = $conn->prepare("
     SELECT 
+        u.id as student_id,
+        u.full_name,
+        c.name as classroom_name,
         ea.id as attempt_id,
         ea.score,
         ea.end_time,
-        u.full_name,
-        c.name as classroom_name,
+        ea.is_completed,
         COUNT(DISTINCT sa.id) as questions_answered
-    FROM exam_attempts ea
-    JOIN users u ON ea.student_id = u.id
-    JOIN classroom_students cs ON u.id = cs.student_id
-    JOIN classrooms c ON cs.classroom_id = c.id
+    FROM exam_classrooms ec
+    JOIN classrooms c ON ec.classroom_id = c.id
+    JOIN classroom_students cs ON c.id = cs.classroom_id
+    JOIN users u ON cs.student_id = u.id
+    LEFT JOIN exam_attempts ea ON ec.exam_id = ea.exam_id AND ea.student_id = u.id
     LEFT JOIN student_answers sa ON ea.id = sa.attempt_id
-    WHERE ea.exam_id = ? AND ea.is_completed = 1
-    GROUP BY ea.id
-    ORDER BY " . $orderBy
+    WHERE ec.exam_id = ?
+    GROUP BY 
+        u.id,
+        u.full_name,
+        c.name,
+        ea.id, 
+        ea.score, 
+        ea.end_time,
+        ea.is_completed
+    ORDER BY " . ($sort === 'name' ? "u.full_name " . ($order === 'asc' ? 'ASC' : 'DESC') : 
+                 ($sort === 'score' ? "COALESCE(ea.score, 0) " . ($order === 'asc' ? 'ASC' : 'DESC') : 
+                 "COALESCE(ea.end_time, '9999-12-31') " . ($order === 'asc' ? 'ASC' : 'DESC')))
 );
 $stmt->execute([$examId]);
 $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Debug information
+error_log("Exam ID: " . $examId . " - Found " . count($attempts) . " students/attempts");
+foreach ($attempts as $index => $attempt) {
+    error_log("Student " . ($index + 1) . ": " . $attempt['full_name'] . 
+              " - Attempt ID: " . ($attempt['attempt_id'] ?? 'NULL') . 
+              " - Is Completed: " . ($attempt['is_completed'] ?? 'NULL'));
+}
 ?>
 
 <!DOCTYPE html>
@@ -389,8 +416,8 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <?php if (empty($attempts)): ?>
             <div class="empty-state">
                 <i class="fas fa-info-circle"></i>
-                <h2>No Submissions Yet</h2>
-                <p>No students have completed this exam yet.</p>
+                <h2>No Students Available</h2>
+                <p>No students have access to this exam yet.</p>
             </div>
         <?php else: ?>
             <div class="students-list">
@@ -406,22 +433,54 @@ $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             </div>
                         </div>
                         
-                        <div class="submission-date">
-                            <i class="fas fa-calendar-alt"></i>
-                            <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?>
-                        </div>
+                        <?php if (isset($attempt['attempt_id']) && $attempt['attempt_id']): ?>
+                            <?php if (isset($attempt['is_completed']) && $attempt['is_completed']): ?>
+                                <div class="submission-date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?>
+                                </div>
 
-                        <div class="score-badge <?php 
-                            echo $attempt['score'] >= 80 ? 'high' : 
-                                 ($attempt['score'] >= 60 ? 'medium' : 'low'); 
-                        ?>">
-                            <i class="fas fa-award"></i>
-                            <?php echo number_format($attempt['score'], 1); ?>%
-                        </div>
-                        
-                        <a href="view-attempt.php?id=<?php echo $attempt['attempt_id']; ?>" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> View Details
-                        </a>
+                                <div class="score-badge <?php 
+                                    echo $attempt['score'] >= 80 ? 'high' : 
+                                         ($attempt['score'] >= 60 ? 'medium' : 'low'); 
+                                ?>">
+                                    <i class="fas fa-award"></i>
+                                    <?php echo number_format($attempt['score'], 1); ?>%
+                                </div>
+                                
+                                <a href="view-attempt.php?id=<?php echo $attempt['attempt_id']; ?>" class="btn btn-primary">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                            <?php else: ?>
+                                <div class="submission-date">
+                                    <i class="fas fa-clock"></i>
+                                    <span>In progress</span>
+                                </div>
+                                
+                                <div class="score-badge medium">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    In Progress
+                                </div>
+                                
+                                <a href="view-attempt.php?id=<?php echo $attempt['attempt_id']; ?>" class="btn btn-primary">
+                                    <i class="fas fa-eye"></i> View Progress
+                                </a>
+                            <?php endif; ?>
+                        <?php else: ?>
+                            <div class="submission-date">
+                                <i class="fas fa-clock"></i>
+                                <span>Not attempted yet</span>
+                            </div>
+                            
+                            <div class="score-badge medium">
+                                <i class="fas fa-hourglass-half"></i>
+                                Pending
+                            </div>
+                            
+                            <span class="btn btn-secondary" style="opacity: 0.6; cursor: not-allowed;">
+                                <i class="fas fa-eye-slash"></i> No Data
+                            </span>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             </div>

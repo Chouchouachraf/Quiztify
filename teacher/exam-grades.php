@@ -21,16 +21,11 @@ $stmt = $conn->prepare("
     JOIN classrooms c ON ec.classroom_id = c.id
     LEFT JOIN exam_attempts ea ON e.id = ea.exam_id AND ea.is_completed = 1
     WHERE e.created_by = ?
-    GROUP BY e.id, e.title, e.total_points, c.name
+    GROUP BY e.id, e.title, e.passing_score, e.total_points, c.name
     ORDER BY e.created_at DESC
 ");
 $stmt->execute([$teacher_id]);
 $exams = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Helper function to convert percentage to points
-function calculatePoints($percentage, $total_points) {
-    return ($percentage / 100) * $total_points;
-}
 
 // Get current page for active state
 $current_page = basename($_SERVER['PHP_SELF']);
@@ -47,6 +42,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Grades - Quiztify</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -219,14 +215,6 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             background: var(--primary-color);
         }
 
-        [data-theme="light"] #theme-toggle i {
-            content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path fill="currentColor" d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0 2a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm0-1a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/></svg>');
-        }
-
-        [data-theme="dark"] #theme-toggle i {
-            content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path fill="none" d="M0 0h24v24H0z"/><path fill="currentColor" d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0 2a7 7 0 1 0 0-14 7 7 0 0 0 0 14zm0-1a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/><path fill="currentColor" d="M12 2a1 1 0 0 1 1 1v1a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1zm0 20a1 1 0 0 1 1-1v-1a1 1 0 1 1-2 0v1a1 1 0 0 1 1 1z"/></svg>');
-        }
-
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -247,7 +235,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             align-items: center;
             margin-bottom: 15px;
             padding-bottom: 15px;
-            border-bottom: 1px solid var(--light-color);
+            border-bottom: 1px solid var(--background-color);
         }
 
         .exam-title {
@@ -292,7 +280,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
         .grades-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid var(--light-color);
+            border-bottom: 1px solid var(--background-color);
         }
 
         .grades-table th {
@@ -337,10 +325,33 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             display: table-row-group;
         }
 
-        .percentage {
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--light-color);
+            border-radius: 15px;
+            margin-top: 30px;
             color: var(--text-color);
-            font-size: 0.85em;
-            margin-left: 5px;
+        }
+
+        .empty-state i {
+            font-size: 64px;
+            color: var(--text-light);
+            margin-bottom: 20px;
+        }
+
+        .action-link {
+            color: var(--secondary-color);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .action-link:hover {
+            color: var(--primary-color);
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -392,94 +403,109 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
     <div class="container">
         <h1>Exam Grades</h1>
 
-        <?php foreach ($exams as $exam): ?>
-            <div class="exam-card">
-                <div class="exam-header">
-                    <h2 class="exam-title"><?= htmlspecialchars($exam['exam_title']) ?></h2>
-                    <span class="classroom"><?= htmlspecialchars($exam['classroom_name']) ?></span>
-                </div>
-
-                <div class="exam-stats">
-                    <div class="stat-item">
-                        <div class="stat-label">Total Students</div>
-                        <div class="stat-value"><?= $exam['total_students'] ?></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Passed</div>
-                        <div class="stat-value"><?= $exam['passed_students'] ?></div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Average Score</div>
-                        <div class="stat-value">
-                            <?= number_format(calculatePoints($exam['average_score'], $exam['total_points']), 1) ?>/<?= $exam['total_points'] ?>
-                        </div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-label">Passing Score</div>
-                        <div class="stat-value">
-                            <?= number_format(calculatePoints($exam['passing_score'], $exam['total_points']), 1) ?>/<?= $exam['total_points'] ?>
-                        </div>
-                    </div>
-                </div>
-
-                <button class="toggle-grades" onclick="toggleGrades(<?= $exam['exam_id'] ?>)">
-                    <i class='bx bx-chevron-down'></i> View Student Grades
-                </button>
-
-                <table class="grades-table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Score</th>
-                            <th>Status</th>
-                            <th>Submitted</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="grades-<?= $exam['exam_id'] ?>" class="student-grades">
-                        <?php
-                        $stmt = $conn->prepare("
-                            SELECT 
-                                u.full_name,
-                                ea.score,
-                                ea.end_time,
-                                ea.id as attempt_id,
-                                ea.published
-                            FROM exam_attempts ea
-                            JOIN users u ON ea.student_id = u.id
-                            WHERE ea.exam_id = ? AND ea.is_completed = 1
-                            ORDER BY ea.score DESC
-                        ");
-                        $stmt->execute([$exam['exam_id']]);
-                        $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        
-                        foreach ($attempts as $attempt):
-                            $passed = $attempt['score'] >= $exam['passing_score'];
-                            $points = calculatePoints($attempt['score'], $exam['total_points']);
-                        ?>
-                            <tr>
-                                <td><?= htmlspecialchars($attempt['full_name']) ?></td>
-                                <td>
-                                    <?= number_format($points, 1) ?>/<?= $exam['total_points'] ?>
-                                    <small class="percentage">(<?= number_format($attempt['score'], 1) ?>%)</small>
-                                </td>
-                                <td>
-                                    <span class="grade-badge <?= $passed ? 'grade-pass' : 'grade-fail' ?>">
-                                        <?= $passed ? 'Passed' : 'Failed' ?>
-                                    </span>
-                                </td>
-                                <td><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></td>
-                                <td>
-                                    <a href="view-attempt.php?id=<?= $attempt['attempt_id'] ?>">
-                                        View Details
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
+        <?php if (empty($exams)): ?>
+            <div class="empty-state">
+                <i class="fas fa-clipboard-list"></i>
+                <h2>No Exams Found</h2>
+                <p>You haven't created any exams yet or no students have attempted your exams.</p>
+                <p><a href="create-exam.php" class="action-link"><i class="fas fa-plus"></i> Create an Exam</a></p>
             </div>
-        <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($exams as $exam): ?>
+                <div class="exam-card">
+                    <div class="exam-header">
+                        <h2 class="exam-title"><?= htmlspecialchars($exam['exam_title']) ?></h2>
+                        <span class="classroom"><?= htmlspecialchars($exam['classroom_name']) ?></span>
+                    </div>
+
+                    <div class="exam-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">Total Students</div>
+                            <div class="stat-value"><?= $exam['total_students'] ?></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Passed</div>
+                            <div class="stat-value"><?= $exam['passed_students'] ?></div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Average Score</div>
+                            <div class="stat-value">
+                                <?= number_format($exam['average_score'], 1) ?>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Passing Score</div>
+                            <div class="stat-value">
+                                <?= number_format($exam['passing_score'], 1) ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="toggle-grades" onclick="toggleGrades(<?= $exam['exam_id'] ?>)">
+                        <i class='bx bx-chevron-down'></i> View Student Grades
+                    </button>
+
+                    <table class="grades-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Score</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="grades-<?= $exam['exam_id'] ?>" class="student-grades">
+                            <?php
+                            $stmt = $conn->prepare("
+                                SELECT 
+                                    u.full_name,
+                                    ea.score,
+                                    ea.end_time,
+                                    ea.id as attempt_id,
+                                    ea.published
+                                FROM exam_attempts ea
+                                JOIN users u ON ea.student_id = u.id
+                                WHERE ea.exam_id = ? AND ea.is_completed = 1
+                                ORDER BY ea.score DESC
+                            ");
+                            $stmt->execute([$exam['exam_id']]);
+                            $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                            
+                            if (empty($attempts)): ?>
+                                <tr>
+                                    <td colspan="5" style="text-align: center; padding: 20px;">
+                                        No students have completed this exam yet.
+                                    </td>
+                                </tr>
+                            <?php else:
+                                foreach ($attempts as $attempt):
+                                    $passed = $attempt['score'] >= $exam['passing_score'];
+                                ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($attempt['full_name']) ?></td>
+                                        <td>
+                                            <?= number_format($attempt['score'], 1) ?>
+                                        </td>
+                                        <td>
+                                            <span class="grade-badge <?= $passed ? 'grade-pass' : 'grade-fail' ?>">
+                                                <?= $passed ? 'Passed' : 'Failed' ?>
+                                            </span>
+                                        </td>
+                                        <td><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></td>
+                                        <td>
+                                            <a href="view-attempt.php?id=<?= $attempt['attempt_id'] ?>" class="action-link">
+                                                <i class="fas fa-eye"></i> View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; 
+                            endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 
     <script>
@@ -487,7 +513,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             const gradesTable = document.getElementById(`grades-${examId}`);
             gradesTable.classList.toggle('show');
             
-            const button = gradesTable.previousElementSibling.previousElementSibling;
+            const button = gradesTable.parentElement.previousElementSibling;
             const icon = button.querySelector('i');
             if (gradesTable.classList.contains('show')) {
                 icon.className = 'bx bx-chevron-up';

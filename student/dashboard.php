@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once '../includes/session.php';
 require_once '../includes/config.php';
 require_once '../includes/functions.php';
@@ -12,27 +13,26 @@ try {
     // Get available exams for the student's classrooms
     $stmt = $conn->prepare("
         SELECT 
-            e.*,
-            u.full_name as teacher_name,
-            COUNT(DISTINCT q.id) as question_count,
+            e.id,
+            e.title,
+            e.description,
+            e.start_date,
+            e.end_date,
+            e.total_points,
+            e.attempts_allowed,
             c.name as classroom_name,
             c.department,
-            (
-                SELECT COUNT(*) 
-                FROM exam_attempts 
-                WHERE exam_id = e.id AND student_id = ? AND is_completed = 1
-            ) as attempts_taken,
-            SUM(q.points) as total_points
+            u.full_name as teacher_name,
+            (SELECT COUNT(*) FROM exam_attempts ea WHERE ea.exam_id = e.id AND ea.student_id = ?) as attempts_taken,
+            (SELECT COUNT(*) FROM questions eq WHERE eq.exam_id = e.id) as question_count
         FROM exams e
-        JOIN users u ON e.created_by = u.id
         JOIN exam_classrooms ec ON e.id = ec.exam_id
         JOIN classrooms c ON ec.classroom_id = c.id
+        JOIN users u ON e.created_by = u.id
         JOIN classroom_students cs ON c.id = cs.classroom_id
-        LEFT JOIN questions q ON e.id = q.exam_id
-        WHERE e.is_published = 1
-        AND cs.student_id = ?
+        WHERE cs.student_id = ?
+        AND e.is_published = 1
         AND e.end_date >= NOW()
-        GROUP BY e.id
         ORDER BY e.start_date ASC
     ");
     $stmt->execute([$student_id, $student_id]);

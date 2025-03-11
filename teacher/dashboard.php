@@ -318,7 +318,7 @@ try {
                                 <div class="exam-meta">
                                     <span><i class="fas fa-users"></i> <?php echo $exam['attempt_count']; ?> attempts</span>
                                     <span><i class="fas fa-chart-line"></i> 
-                                        <?php echo $exam['average_score'] ? round($exam['average_score'], 1) . '%' : 'No attempts'; ?>
+                                        <?php echo $exam['average_score'] ? round($exam['average_score'], 1) . '' : 'No attempts'; ?>
                                     </span>
                                 </div>
                             </li>
