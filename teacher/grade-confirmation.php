@@ -104,6 +104,7 @@ $final_grade = isset($confirmation['score']) ? $confirmation['score'] : 0;
             display: flex;
             gap: 15px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .btn {
@@ -126,6 +127,11 @@ $final_grade = isset($confirmation['score']) ? $confirmation['score'] : 0;
             color: white;
         }
 
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
         .btn:hover {
             opacity: 0.9;
         }
@@ -144,36 +150,39 @@ $final_grade = isset($confirmation['score']) ? $confirmation['score'] : 0;
             <h1 class="confirmation-title">Grades Saved Successfully!</h1>
 
             <div class="confirmation-details">
-    <div class="detail-item">
-        <span class="detail-label">Exam:</span>
-        <?php echo isset($confirmation['exam_title']) ? htmlspecialchars($confirmation['exam_title']) : 'N/A'; ?>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Student:</span>
-        <?php echo isset($confirmation['student_name']) ? htmlspecialchars($confirmation['student_name']) : 'N/A'; ?>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Final Score:</span>
-        <div class="final-grade-display">
-            <?php 
-            if (isset($confirmation['score']) && isset($total_points)) {
-                echo number_format($confirmation['score'], 1) . "/" . $total_points;
-            } else {
-                echo "N/A";
-            }
-            ?>
-        </div>
-    </div>
-    <div class="detail-item">
-        <span class="detail-label">Status:</span>
-        <span class="status-badge <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'status-published' : 'status-draft') : 'status-draft'; ?>">
-            <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'Published' : 'Saved as Draft') : 'Saved as Draft'; ?>
-        </span>
-    </div>
-</div>
+                <div class="detail-item">
+                    <span class="detail-label">Exam:</span>
+                    <?php echo isset($confirmation['exam_title']) ? htmlspecialchars($confirmation['exam_title']) : 'N/A'; ?>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Student:</span>
+                    <?php echo isset($confirmation['student_name']) ? htmlspecialchars($confirmation['student_name']) : 'N/A'; ?>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Final Score:</span>
+                    <div class="final-grade-display">
+                        <?php 
+                        if (isset($confirmation['score']) && isset($total_points)) {
+                            echo number_format($confirmation['score'], 1) . "/" . $total_points;
+                        } else {
+                            echo "N/A";
+                        }
+                        ?>
+                    </div>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Status:</span>
+                    <span class="status-badge <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'status-published' : 'status-draft') : 'status-draft'; ?>">
+                        <?php echo isset($confirmation['published']) ? ($confirmation['published'] ? 'Published' : 'Saved as Draft') : 'Saved as Draft'; ?>
+                    </span>
+                </div>
+            </div>
             <div class="action-buttons">
                 <a href="grade-exam.php?id=<?php echo isset($confirmation['attempt_id']) ? $confirmation['attempt_id'] : ''; ?>" class="btn btn-primary">
                     <i class='bx bx-edit'></i> Continue Editing
+                </a>
+                <a href="generate-exam-pdf.php?id=<?php echo isset($confirmation['attempt_id']) ? $confirmation['attempt_id'] : ''; ?>" class="btn btn-success">
+                    <i class='bx bx-download'></i> Download as PDF
                 </a>
                 <a href="view-exam.php?id=<?php echo isset($confirmation['exam_id']) ? $confirmation['exam_id'] : ''; ?>" class="btn btn-secondary">
                     <i class='bx bx-arrow-back'></i> Back to Exam Results

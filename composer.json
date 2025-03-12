@@ -1,0 +1,14 @@
+{
+    "name": "quiztify/exam-system",
+    "description": "A quiz and examination system",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "tecnickcom/tcpdf": "^6.6"
+    },
+    "autoload": {
+        "psr-4": {
+            "Quiztify\\": "src/"
+        }
+    }
+}

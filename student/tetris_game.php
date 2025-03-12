@@ -1010,7 +1010,7 @@ $userName = $_SESSION['full_name'] ?? 'Student';
             if (!isValidMove(currentPiece, currentPiece.x, currentPiece.y)) {
                 gameActive = false;
                 gameOverScreen.style.display = 'flex';
-                finalScoreElement.textContent = score;
+                finalScoreElement.textContent = calculateFinalScore();
             }
         }
 
@@ -1043,8 +1043,16 @@ $userName = $_SESSION['full_name'] ?? 'Student';
         // Update the game time
         function updateTime() {
             const minutes = Math.floor(gameTime / 60);
-            const seconds = gameTime % 60;
+            const seconds = Math.floor(gameTime % 60);
             timeElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Calculate the final score
+        function calculateFinalScore() {
+            const timeBonus = Math.floor(gameTime) * 10; // 10 points per second
+            const levelBonus = level * 100; // 100 points per level
+            const linesBonus = lines * 50; // 50 points per line
+            return score + timeBonus + levelBonus + linesBonus;
         }
 
         // Main game loop
@@ -1108,6 +1116,8 @@ $userName = $_SESSION['full_name'] ?? 'Student';
             gameActive = true;
             updateStats();
             updateTime();
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
         }
 
         // Start the game

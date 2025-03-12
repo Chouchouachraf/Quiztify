@@ -103,7 +103,7 @@ try {
             --light-color: #ecf0f1;
             --dark-color: #2c3e50;
             --background-color: #f5f6fa;
-            --accent-color: #3498db; /* Blue accent color */
+            --accent-color: #3498db;
         }
 
         [data-theme="dark"] {
@@ -116,6 +116,7 @@ try {
             --warning-color: #ffcc00;
             --light-color: #333333;
             --dark-color: #ffffff;
+            --accent-color: #44bb77;
         }
 
         * {
@@ -137,9 +138,15 @@ try {
             padding: 20px;
         }
 
+        .page-title {
+            font-size: 2em;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -148,8 +155,19 @@ try {
             background: var(--light-color);
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+
+        .stat-label {
+            font-size: 1em;
+            color: var(--text-color);
         }
 
         .result-card {
@@ -165,28 +183,23 @@ try {
             justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--light-color);
         }
 
         .exam-title {
             font-size: 1.5em;
-            color: var(--text-color);
+            color: var(--primary-color);
         }
 
         .exam-score {
-            font-size: 2em;
+            font-size: 1.5em;
             font-weight: bold;
             color: var(--accent-color);
         }
 
         .exam-meta {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
-            padding: 15px;
-            background: var(--light-color);
-            border-radius: 8px;
             margin-bottom: 20px;
         }
 
@@ -195,44 +208,14 @@ try {
         }
 
         .meta-label {
-            color: var(--text-light);
             font-size: 0.9em;
-            margin-bottom: 5px;
+            color: var(--text-color);
         }
 
         .meta-value {
+            font-size: 1.1em;
             font-weight: 500;
             color: var(--text-color);
-        }
-
-        .answers-section {
-            margin-top: 20px;
-        }
-
-        .answer-item {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .question-text {
-            font-weight: 500;
-            color: var(--text-color);
-            margin-bottom: 10px;
-        }
-
-        .answer-text {
-            background: white;
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-
-        .points-earned {
-            color: var(--success-color);
-            font-weight: 500;
-            margin: 10px 0;
         }
 
         .teacher-feedback {
@@ -241,6 +224,7 @@ try {
             border-radius: 5px;
             border-left: 3px solid var(--secondary-color);
             margin-top: 10px;
+            color: var(--text-color);
         }
 
         .toggle-answers {
@@ -251,14 +235,50 @@ try {
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-answers i {
+            transition: transform 0.3s ease;
         }
 
         .answers-container {
             display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--light-color);
+            border-radius: 8px;
+            border: 1px solid var(--background-color);
         }
 
         .answers-container.show {
             display: block;
+        }
+
+        .answer-item {
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-weight: 500;
+            color: var(--text-color);
+            margin-bottom: 10px;
+        }
+
+        .answer-text {
+            background: var(--background-color);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            color: var(--text-color);
+        }
+
+        .points-earned {
+            color: var(--success-color);
+            font-weight: 500;
+            margin: 10px 0;
         }
 
         .no-results {
@@ -266,7 +286,7 @@ try {
             padding: 40px;
             background: var(--light-color);
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .no-results i {
@@ -282,30 +302,6 @@ try {
 
         .no-results p {
             color: var(--text-color);
-        }
-
-        @media (max-width: 768px) {
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        .percentage {
-            color: #666;
-            font-size: 0.85em;
-            margin-left: 5px;
-        }
-
-        .score-display {
-            display: flex;
-            align-items: baseline;
-            gap: 5px;
-        }
-
-        .score-value {
-            font-size: 1.2em;
-            font-weight: 500;
-            color: #2c3e50;
         }
     </style>
 </head>
@@ -357,16 +353,6 @@ try {
                             <div class="meta-label">Submitted</div>
                             <div class="meta-value"><?php echo date('M j, Y g:i A', strtotime($attempt['end_time'])); ?></div>
                         </div>
-                        <div class="meta-item">
-                            <div class="meta-label">Score</div>
-                            <div class="meta-value">
-                                <div class="score-display">
-                                    <span class="score-value">
-                                        <?php echo number_format($attempt['score'], 1); ?>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                     <?php if ($attempt['teacher_feedback']): ?>
@@ -377,18 +363,6 @@ try {
                     <?php endif; ?>
 
                     <?php if ($attempt['published']): ?>
-                        <div class="score-section">
-                            <div class="score-display">
-                                <span class="score-value">
-                                    <?php echo number_format($attempt['score'], 1); ?>/<?php echo $attempt['total_points']; ?>
-                                </span>
-                                <small class="percentage">(<?php echo number_format($attempt['score'], 1); ?>%)</small>
-                            </div>
-                            <div class="pass-status <?php echo $attempt['score'] >= $attempt['passing_score'] ? 'passed' : 'failed'; ?>">
-                                <?php echo $attempt['score'] >= $attempt['passing_score'] ? 'Passed' : 'Failed'; ?>
-                            </div>
-                        </div>
-
                         <button class="toggle-answers" onclick="toggleAnswers(<?php echo $attempt['attempt_id']; ?>)">
                             <i class='bx bx-chevron-down'></i> View Detailed Results
                         </button>
@@ -426,7 +400,6 @@ try {
                         <div class="pending-notice">
                             <i class='bx bx-time-five'></i>
                             <p>Results will be available after grading is complete</p>
-                            <span class="submission-time">Submitted <?php echo timeAgo($attempt['end_time']); ?></span>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -437,10 +410,10 @@ try {
     <script>
         function toggleAnswers(attemptId) {
             const container = document.getElementById(`answers-${attemptId}`);
-            container.classList.toggle('show');
-            
-            const button = container.previousElement;
+            const button = container.previousElementSibling;
             const icon = button.querySelector('i');
+
+            container.classList.toggle('show');
             if (container.classList.contains('show')) {
                 icon.className = 'bx bx-chevron-up';
             } else {
