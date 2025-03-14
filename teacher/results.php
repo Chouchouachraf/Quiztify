@@ -161,21 +161,6 @@ try {
             color: white;
         }
 
-        .btn-view {
-            display: inline-block;
-            padding: 6px 12px;
-            background: var(--secondary-color);
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 14px;
-            transition: background 0.3s;
-        }
-
-        .btn-view:hover {
-            background: var(--primary-color);
-        }
-
         .filters {
             display: flex;
             gap: 15px;
@@ -287,10 +272,7 @@ table th, table td {
                             <th>Exam Title</th>
                             <th>Score</th>
                             <th>Questions</th>
-                            <th>Status</th>
                             <th>Completion Time</th>
-                            <th>Duration</th>
-                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -300,23 +282,7 @@ table th, table td {
                                 <td><?php echo htmlspecialchars($result['exam_title']); ?></td>
                                 <td><?php echo number_format($result['score'], 1); ?>%</td>
                                 <td><?php echo $result['questions_answered']; ?></td>
-                                <td>
-                                    <span class="score-badge <?php echo $result['score'] >= $result['passing_score'] ? 'score-pass' : 'score-fail'; ?>">
-                                        <?php echo $result['score'] >= $result['passing_score'] ? 'Passed' : 'Failed'; ?>
-                                    </span>
-                                </td>
                                 <td><?php echo date('M j, Y g:i A', strtotime($result['end_time'])); ?></td>
-                                <td>
-                                    <?php 
-                                    $duration = strtotime($result['end_time']) - strtotime($result['start_time']);
-                                    echo floor($duration / 60) . ' mins';
-                                    ?>
-                                </td>
-                                <td>
-                                    <a href="view-attempt.php?id=<?php echo $result['attempt_id']; ?>" class="btn-view">
-                                        <i class="fas fa-eye"></i> View Details
-                                    </a>
-                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>

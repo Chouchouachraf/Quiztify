@@ -6,24 +6,21 @@ $conn = getDBConnection();
 $teacher_id = $_SESSION['user_id'];
 
 // Get all exams created by this teacher with student attempts
-$stmt = $conn->prepare("
-    SELECT 
-        e.id as exam_id,
-        e.title as exam_title,
-        e.passing_score,
-        e.total_points,
-        c.name as classroom_name,
-        COUNT(DISTINCT ea.student_id) as total_students,
-        COUNT(CASE WHEN ea.score >= e.passing_score THEN 1 END) as passed_students,
-        AVG(ea.score) as average_score
-    FROM exams e
-    JOIN exam_classrooms ec ON e.id = ec.exam_id
-    JOIN classrooms c ON ec.classroom_id = c.id
-    LEFT JOIN exam_attempts ea ON e.id = ea.exam_id AND ea.is_completed = 1
-    WHERE e.created_by = ?
-    GROUP BY e.id, e.title, e.passing_score, e.total_points, c.name
-    ORDER BY e.created_at DESC
-");
+$stmt = $conn->prepare("SELECT 
+    e.id as exam_id,
+    e.title as exam_title,
+    e.total_points,
+    c.name as classroom_name,
+    COUNT(DISTINCT ea.student_id) as total_students,
+    COUNT(CASE WHEN ea.score >= e.passing_score THEN 1 END) as passed_students,
+    AVG(ea.score) as average_score
+FROM exams e
+JOIN exam_classrooms ec ON e.id = ec.exam_id
+JOIN classrooms c ON ec.classroom_id = c.id
+LEFT JOIN exam_attempts ea ON e.id = ea.exam_id AND ea.is_completed = 1
+WHERE e.created_by = ?
+GROUP BY e.id, e.title, e.total_points, c.name
+ORDER BY e.created_at DESC");
 $stmt->execute([$teacher_id]);
 $exams = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -40,7 +37,7 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Exam Grades - Quiztify</title>
+    <title>Exam Grades - QuizTify</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
@@ -289,23 +286,6 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
             color: var(--primary-color);
         }
 
-        .grade-badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.9em;
-        }
-
-        .grade-pass {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .grade-fail {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
         .toggle-grades {
             background: none;
             border: none;
@@ -352,6 +332,13 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
         .action-link:hover {
             color: var(--primary-color);
             text-decoration: underline;
+        }
+
+        /* Added CSS for the image */
+        .exam-image {
+            max-width: 100px;
+            height: auto;
+            margin: 20px 0;
         }
     </style>
 </head>
@@ -402,6 +389,9 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
     <!-- Main Content -->
     <div class="container">
         <h1>Exam Grades</h1>
+        
+        <!-- Added image -->
+        <img src="../pictures/exam.png" alt="exam-page" class="exam-image">
 
         <?php if (empty($exams)): ?>
             <div class="empty-state">
@@ -433,12 +423,6 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
                                 <?= number_format($exam['average_score'], 1) ?>
                             </div>
                         </div>
-                        <div class="stat-item">
-                            <div class="stat-label">Passing Score</div>
-                            <div class="stat-value">
-                                <?= number_format($exam['passing_score'], 1) ?>
-                            </div>
-                        </div>
                     </div>
 
                     <button class="toggle-grades" onclick="toggleGrades(<?= $exam['exam_id'] ?>)">
@@ -450,54 +434,38 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
                             <tr>
                                 <th>Student</th>
                                 <th>Score</th>
-                                <th>Status</th>
                                 <th>Submitted</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="grades-<?= $exam['exam_id'] ?>" class="student-grades">
                             <?php
-                            $stmt = $conn->prepare("
-                                SELECT 
-                                    u.full_name,
-                                    ea.score,
-                                    ea.end_time,
-                                    ea.id as attempt_id,
-                                    ea.published
-                                FROM exam_attempts ea
-                                JOIN users u ON ea.student_id = u.id
-                                WHERE ea.exam_id = ? AND ea.is_completed = 1
-                                ORDER BY ea.score DESC
-                            ");
+                            $stmt = $conn->prepare("SELECT 
+                                u.full_name,
+                                ea.score,
+                                ea.end_time,
+                                ea.id as attempt_id
+                            FROM exam_attempts ea
+                            JOIN users u ON ea.student_id = u.id
+                            WHERE ea.exam_id = ? AND ea.is_completed = 1
+                            ORDER BY ea.score DESC");
                             $stmt->execute([$exam['exam_id']]);
                             $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             
                             if (empty($attempts)): ?>
                                 <tr>
-                                    <td colspan="5" style="text-align: center; padding: 20px;">
+                                    <td colspan="3" style="text-align: center; padding: 20px;">
                                         No students have completed this exam yet.
                                     </td>
                                 </tr>
                             <?php else:
                                 foreach ($attempts as $attempt):
-                                    $passed = $attempt['score'] >= $exam['passing_score'];
-                                ?>
+                            ?>
                                     <tr>
                                         <td><?= htmlspecialchars($attempt['full_name']) ?></td>
                                         <td>
                                             <?= number_format($attempt['score'], 1) ?>
                                         </td>
-                                        <td>
-                                            <span class="grade-badge <?= $passed ? 'grade-pass' : 'grade-fail' ?>">
-                                                <?= $passed ? 'Passed' : 'Failed' ?>
-                                            </span>
-                                        </td>
                                         <td><?= date('M j, Y g:i A', strtotime($attempt['end_time'])) ?></td>
-                                        <td>
-                                            <a href="view-attempt.php?id=<?= $attempt['attempt_id'] ?>" class="action-link">
-                                                <i class="fas fa-eye"></i> View Details
-                                            </a>
-                                        </td>
                                     </tr>
                                 <?php endforeach; 
                             endif; ?>

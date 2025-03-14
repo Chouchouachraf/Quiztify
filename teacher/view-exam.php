@@ -33,14 +33,20 @@ if (!$exam) {
 $sort = isset($_GET['sort']) ? $_GET['sort'] : 'name';
 $order = isset($_GET['order']) ? $_GET['order'] : 'asc';
 
-$orderBy = match($sort) {
-    'score' => "ea.score " . ($order === 'asc' ? 'ASC' : 'DESC'),
-    'date' => "ea.end_time " . ($order === 'asc' ? 'ASC' : 'DESC'),
-    'name' => "u.full_name " . ($order === 'asc' ? 'ASC' : 'DESC'),
-    default => "u.full_name ASC"
-};
+// Fallback for PHP versions < 8.0
+$orderBy = '';
+switch($sort) {
+    case 'score':
+        $orderBy = "COALESCE(ea.score, 0) " . ($order === 'asc' ? 'ASC' : 'DESC');
+        break;
+    case 'date':
+        $orderBy = "COALESCE(ea.end_time, '9999-12-31') " . ($order === 'asc' ? 'ASC' : 'DESC');
+        break;
+    case 'name':
+    default:
+        $orderBy = "u.full_name " . ($order === 'asc' ? 'ASC' : 'DESC');
+}
 
-// Modified query to show all students who have access to the exam
 $stmt = $conn->prepare("
     SELECT 
         u.id as student_id,
@@ -66,10 +72,8 @@ $stmt = $conn->prepare("
         ea.score, 
         ea.end_time,
         ea.is_completed
-    ORDER BY " . ($sort === 'name' ? "u.full_name " . ($order === 'asc' ? 'ASC' : 'DESC') : 
-                 ($sort === 'score' ? "COALESCE(ea.score, 0) " . ($order === 'asc' ? 'ASC' : 'DESC') : 
-                 "COALESCE(ea.end_time, '9999-12-31') " . ($order === 'asc' ? 'ASC' : 'DESC')))
-);
+    ORDER BY $orderBy
+");
 $stmt->execute([$examId]);
 $attempts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

@@ -438,9 +438,6 @@ table th, table td {
                 <a href="statistics.php" class="nav-link">
                     <i class="fas fa-chart-bar"></i> Statistics
                 </a>
-                <a href="settings.php" class="nav-link">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
             </nav>
         </div>
 
@@ -566,105 +563,6 @@ table th, table td {
         </div>
     </div>
 
-    <!-- Add Exam Modal -->
-    <div id="addModal" class="modal">
-        <div class="modal-content">
-            <h2>Add New Exam</h2>
-            <form action="" method="POST">
-                <input type="hidden" name="action" value="add">
-                <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" name="title" required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea name="description" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Teacher</label>
-                    <select name="teacher_id" required>
-                        <?php foreach ($teachers as $teacher): ?>
-                            <option value="<?php echo $teacher['id']; ?>">
-                                <?php echo htmlspecialchars($teacher['full_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Duration (minutes)</label>
-                    <input type="number" name="duration_minutes" required min="1">
-                </div>
-                <div class="form-group">
-                    <label>Passing Score (%)</label>
-                    <input type="number" name="passing_score" required min="0" max="100">
-                </div>
-                <div class="form-group">
-                    <label>Attempts Allowed</label>
-                    <input type="number" name="attempts_allowed" required min="1">
-                </div>
-                <div class="form-group">
-                    <label>Start Date</label>
-                    <input type="datetime-local" name="start_date" required>
-                </div>
-                <div class="form-group">
-                    <label>End Date</label>
-                    <input type="datetime-local" name="end_date" required>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" name="is_published" id="add_is_published">
-                    <label for="add_is_published">Publish Exam</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Add Exam</button>
-                <button type="button" class="btn btn-danger" onclick="hideModal('addModal')">Cancel</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Edit Exam Modal -->
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <h2>Edit Exam</h2>
-            <form action="" method="POST">
-                <input type="hidden" name="action" value="update">
-                <input type="hidden" name="exam_id" id="edit_exam_id">
-                <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" name="title" id="edit_title" required>
-                </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <textarea name="description" id="edit_description" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Duration (minutes)</label>
-                    <input type="number" name="duration_minutes" id="edit_duration_minutes" required min="1">
-                </div>
-                <div class="form-group">
-                    <label>Passing Score (%)</label>
-                    <input type="number" name="passing_score" id="edit_passing_score" required min="0" max="100">
-                </div>
-                <div class="form-group">
-                    <label>Attempts Allowed</label>
-                    <input type="number" name="attempts_allowed" id="edit_attempts_allowed" required min="1">
-                </div>
-                <div class="form-group">
-                    <label>Start Date</label>
-                    <input type="datetime-local" name="start_date" id="edit_start_date" required>
-                </div>
-                <div class="form-group">
-                    <label>End Date</label>
-                    <input type="datetime-local" name="end_date" id="edit_end_date" required>
-                </div>
-                <div class="checkbox-group">
-                    <input type="checkbox" name="is_published" id="edit_is_published">
-                    <label for="edit_is_published">Publish Exam</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Update Exam</button>
-                <button type="button" class="btn btn-danger" onclick="hideModal('editModal')">Cancel</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get theme from localStorage or default to light
@@ -699,30 +597,6 @@ table th, table td {
             }
         });
 
-        function showAddModal() {
-            document.getElementById('addModal').style.display = 'block';
-        }
-
-        function showEditModal(exam) {
-            document.getElementById('edit_exam_id').value = exam.id;
-            document.getElementById('edit_title').value = exam.title;
-            document.getElementById('edit_description').value = exam.description;
-            document.getElementById('edit_duration_minutes').value = exam.duration_minutes;
-            document.getElementById('edit_passing_score').value = exam.passing_score;
-            document.getElementById('edit_attempts_allowed').value = exam.attempts_allowed;
-            document.getElementById('edit_is_published').checked = exam.is_published == 1;
-            
-            // Format datetime for input
-            document.getElementById('edit_start_date').value = formatDateTime(exam.start_date);
-            document.getElementById('edit_end_date').value = formatDateTime(exam.end_date);
-            
-            document.getElementById('editModal').style.display = 'block';
-        }
-
-        function hideModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-        }
-
         function confirmDelete(examId) {
             if (confirm('Are you sure you want to delete this exam?')) {
                 const form = document.createElement('form');
@@ -733,18 +607,6 @@ table th, table td {
                 `;
                 document.body.appendChild(form);
                 form.submit();
-            }
-        }
-
-        function formatDateTime(dateString) {
-            const date = new Date(dateString);
-            return date.toISOString().slice(0, 16);
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            if (event.target.className === 'modal') {
-                event.target.style.display = 'none';
             }
         }
 

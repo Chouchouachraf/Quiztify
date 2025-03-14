@@ -124,6 +124,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ");
                 $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
                 
+                // Additional updates for specific question types
+                if ($answer['question_type'] === 'mcq') {
+                    // Update mcq_student_answers table
+                    $stmt = $conn->prepare("
+                        UPDATE mcq_student_answers 
+                        SET points_earned = ?,
+                            teacher_comment = ?,
+                            graded_by = ?,
+                            graded_at = NOW()
+                        WHERE attempt_id = ? AND question_id = ?
+                    ");
+                    $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
+                } elseif ($answer['question_type'] === 'true_false') {
+                    // Update true_false_student_answers table
+                    $stmt = $conn->prepare("
+                        UPDATE true_false_student_answers 
+                        SET points_earned = ?,
+                            teacher_comment = ?,
+                            graded_by = ?,
+                            graded_at = NOW()
+                        WHERE attempt_id = ? AND question_id = ?
+                    ");
+                    $stmt->execute([$points, $comment, $_SESSION['user_id'], $attemptId, $questionId]);
+                }
+                
                 $totalPoints += $points;
                 $maxPoints += $answer['max_points'];
             }

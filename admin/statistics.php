@@ -368,9 +368,6 @@ table th, table td {
                 <a href="statistics.php" class="nav-link active">
                     <i class="fas fa-chart-bar"></i> Statistics
                 </a>
-                <a href="settings.php" class="nav-link">
-                    <i class="fas fa-cog"></i> Settings
-                </a>
             </nav>
         </div>
 

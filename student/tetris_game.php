@@ -103,6 +103,9 @@ $userName = $_SESSION['full_name'] ?? 'Student';
             color: var(--text-color);
             transition: all 0.3s ease;
             min-height: 100vh;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" fill="none" stroke="%23e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpath d="M12 2L2 7l10 5 10-5z"%3E%3C/path%3E%3Cpath d="M2 17l10 5 10-5M2 12l10 5 10-5M2 7l10 5 10-5M2 12l10 5 10-5"%3E%3C/path%3E%3C/svg%3E');
+            background-size: 200px;
+            background-opacity: 0.05;
         }
 
         .navbar {
@@ -587,6 +590,46 @@ $userName = $_SESSION['full_name'] ?? 'Student';
             border-radius: var(--border-radius-sm);
             font-family: monospace;
             margin: 0 2px;
+        }
+
+        /* Educational decorative elements */
+        .game-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="%23e74c3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Cpath d="M12 2L2 7l10 5 10-5-10-5z"%3E%3C/path%3E%3Cpath d="M2 17l10 5 10-5M2 12l10 5 10-5M2 7l10 5 10-5M2 12l10 5 10-5"%3E%3C/path%3E%3C/svg%3E');
+            background-size: 50px;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .game-info::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="%234361ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Ccircle cx="12" cy="12" r="10"%3E%3C/circle%3E%3C/svg%3E');
+            background-size: 40px;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        /* Educational icons */
+        .game-message::before {
+            content: "";
+            background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="%234361ee" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"%3E%3Crect x="3" y="3" width="18" height="18" rx="2" ry="2"%3E%3C/rect%3E%3Cpath d="M3 9l9-2 9 2"%3E%3C/path%3E%3Cpath d="M9 21V9"%3E%3C/path%3E%3Cpath d="M15 21V9"%3E%3C/path%3E%3C/svg%3E');
+            background-repeat: no-repeat;
+            background-size: contain;
+            width: 48px;
+            height: 48px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
         }
     </style>
 </head>

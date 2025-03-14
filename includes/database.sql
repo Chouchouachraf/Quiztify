@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mar. 11 mars 2025 à 00:45
+-- Généré le : jeu. 13 mars 2025 à 02:25
 -- Version du serveur : 10.4.32-MariaDB
 -- Version de PHP : 8.2.12
 
@@ -42,7 +42,7 @@ CREATE TABLE `classrooms` (
 
 INSERT INTO `classrooms` (`id`, `teacher_id`, `name`, `department`, `description`, `created_at`) VALUES
 (1, 2, 'DD201', 'DEVELOPEMENT', '', '2025-02-13 15:21:46'),
-(2, 7, 'Finance', 'ge', '2 eme annee', '2025-02-19 16:57:59');
+(2, 7, 'Finances', 'ge', '2 eme annee', '2025-02-19 16:57:59');
 
 -- --------------------------------------------------------
 
@@ -64,7 +64,9 @@ CREATE TABLE `classroom_students` (
 INSERT INTO `classroom_students` (`id`, `classroom_id`, `student_id`, `joined_at`) VALUES
 (1, 1, 1, '2025-02-13 15:21:52'),
 (2, 2, 3, '2025-02-19 16:58:09'),
-(3, 1, 3, '2025-03-10 07:18:50');
+(3, 1, 3, '2025-03-10 07:18:50'),
+(4, 1, 8, '2025-03-13 00:09:50'),
+(5, 1, 2, '2025-03-13 01:09:10');
 
 -- --------------------------------------------------------
 
@@ -93,10 +95,10 @@ CREATE TABLE `exams` (
 --
 
 INSERT INTO `exams` (`id`, `title`, `description`, `is_published`, `start_date`, `end_date`, `created_by`, `created_at`, `total_points`, `attempts_allowed`, `passing_score`, `has_timer`, `duration_minutes`) VALUES
-(61, 'test', 'poiuyt', 1, '2025-03-10 12:00:00', '2025-03-10 13:00:00', 7, '2025-03-10 06:23:46', '20', 1, 60, 1, 60),
-(62, 'AAA', 'AAA', 1, '2025-03-10 12:00:00', '2025-03-10 13:00:00', 7, '2025-03-10 06:28:09', '20', 1, 60, 1, 60),
-(76, 'test', 'description', 1, '2025-03-10 20:00:00', '2025-03-10 22:00:00', 2, '2025-03-10 20:38:57', '10', 1, 60, 1, 60),
-(77, 'hhhh', 'lòkljhg', 1, '2025-03-10 22:00:00', '2025-03-11 00:00:00', 2, '2025-03-10 23:40:59', '10', 1, 60, 1, 60);
+(78, 'EXAM LARAVEL', ';OLIKUJYHG', 1, '2025-03-11 19:00:00', '2025-03-11 20:00:00', 2, '2025-03-11 19:07:31', '10', 1, 60, 1, 60),
+(79, 'Examen marketing', 'Description', 1, '2025-03-11 21:00:00', '2025-03-11 23:00:00', 7, '2025-03-11 21:54:19', '20', 1, 60, 1, 60),
+(80, 'TEST_EXAM', 'Description', 1, '2025-03-12 23:00:00', '2025-03-13 00:00:00', 2, '2025-03-12 23:30:32', '10', 1, 60, 1, 60),
+(81, 'aaaaa', 'aaaa', 1, '2025-03-13 00:00:00', '2025-03-13 01:00:00', 2, '2025-03-13 00:04:17', '10', 1, 60, 1, 30);
 
 -- --------------------------------------------------------
 
@@ -125,10 +127,10 @@ CREATE TABLE `exam_attempts` (
 --
 
 INSERT INTO `exam_attempts` (`id`, `exam_id`, `student_id`, `start_time`, `end_time`, `is_completed`, `score`, `graded_by`, `created_at`, `published`, `teacher_feedback`, `graded_at`, `violations`) VALUES
-(50, 61, 3, '2025-03-10 06:24:03', NULL, 0, NULL, NULL, '2025-03-10 06:24:03', 0, NULL, NULL, 0),
-(51, 62, 3, '2025-03-10 06:28:23', NULL, 0, NULL, NULL, '2025-03-10 06:28:23', 0, NULL, NULL, 0),
-(69, 76, 1, '2025-03-10 20:39:10', '2025-03-10 20:39:22', 1, 0.00, 2, '2025-03-10 20:39:10', 1, 'dddhdhdh', '2025-03-10 23:26:53', 0),
-(70, 77, 1, '2025-03-10 23:41:14', '2025-03-10 23:41:21', 1, 0.00, 2, '2025-03-10 23:41:14', 1, 'nadii', '2025-03-10 23:41:50', 0);
+(71, 78, 1, '2025-03-11 19:08:20', '2025-03-11 19:08:33', 1, 9.50, 2, '2025-03-11 19:08:20', 1, 'goood', '2025-03-11 20:05:54', 0),
+(72, 79, 3, '2025-03-11 22:00:17', '2025-03-11 22:00:35', 1, 9.00, 7, '2025-03-11 22:00:17', 1, 'hhhhhh knmot elik ahobi', '2025-03-12 19:40:17', 0),
+(73, 80, 1, '2025-03-12 23:31:11', NULL, 0, NULL, NULL, '2025-03-12 23:31:11', 0, NULL, NULL, 0),
+(74, 81, 1, '2025-03-13 00:04:54', '2025-03-13 00:05:32', 1, 9.00, 2, '2025-03-13 00:04:54', 1, 'NADIII', '2025-03-13 00:07:31', 0);
 
 -- --------------------------------------------------------
 
@@ -162,10 +164,24 @@ CREATE TABLE `exam_classrooms` (
 --
 
 INSERT INTO `exam_classrooms` (`id`, `exam_id`, `classroom_id`, `created_at`) VALUES
-(52, 61, 2, '2025-03-10 06:23:46'),
-(53, 62, 2, '2025-03-10 06:28:09'),
-(67, 76, 1, '2025-03-10 20:38:57'),
-(68, 77, 1, '2025-03-10 23:40:59');
+(69, 78, 1, '2025-03-11 19:07:31'),
+(70, 79, 2, '2025-03-11 21:54:19'),
+(71, 80, 1, '2025-03-12 23:30:32'),
+(72, 81, 1, '2025-03-13 00:04:17');
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `exam_feedback`
+--
+
+CREATE TABLE `exam_feedback` (
+  `id` int(11) NOT NULL,
+  `exam_id` int(11) NOT NULL,
+  `student_id` int(11) NOT NULL,
+  `feedback_text` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -182,14 +198,6 @@ CREATE TABLE `exam_final_grades` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Déchargement des données de la table `exam_final_grades`
---
-
-INSERT INTO `exam_final_grades` (`id`, `attempt_id`, `final_score`, `total_points`, `overall_feedback`, `created_at`, `updated_at`) VALUES
-(1, 69, 0.00, 10, 'dddhdhdh', '2025-03-10 23:26:53', '2025-03-10 23:26:53'),
-(2, 70, 0.00, 10, 'nadii', '2025-03-10 23:41:50', '2025-03-10 23:41:50');
 
 -- --------------------------------------------------------
 
@@ -239,12 +247,16 @@ CREATE TABLE `mcq_options` (
 --
 
 INSERT INTO `mcq_options` (`id`, `question_id`, `option_text`, `option_type`, `true_false_value`, `is_correct`) VALUES
-(60, 80, 'op1', 'text', NULL, 0),
-(61, 80, 'op2', 'text', NULL, 1),
-(62, 83, 'HHH1', 'text', NULL, 0),
-(63, 83, 'HHH2', 'text', NULL, 1),
-(74, 109, 'OPTION1', 'text', NULL, 0),
-(75, 109, 'OPTION2', 'text', NULL, 1);
+(76, 114, 'OP1', 'text', NULL, 1),
+(77, 114, 'OP2', 'text', NULL, 0),
+(78, 117, 'op1', 'text', NULL, 0),
+(79, 117, 'op2', 'text', NULL, 0),
+(80, 117, 'op3', 'text', NULL, 1),
+(81, 118, 'OPT1', 'text', NULL, 1),
+(82, 118, 'OPT2', 'text', NULL, 0),
+(83, 123, 'OP1', 'text', NULL, 0),
+(84, 123, 'OP2', 'text', NULL, 0),
+(85, 123, 'OP3', 'text', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -260,15 +272,11 @@ CREATE TABLE `mcq_student_answers` (
   `selected_option_id` int(11) NOT NULL,
   `is_correct` tinyint(1) DEFAULT NULL,
   `points_earned` decimal(5,2) DEFAULT NULL,
+  `teacher_comment` text DEFAULT NULL,
+  `graded_by` int(11) DEFAULT NULL,
+  `graded_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Déchargement des données de la table `mcq_student_answers`
---
-
-INSERT INTO `mcq_student_answers` (`id`, `attempt_id`, `question_id`, `student_id`, `selected_option_id`, `is_correct`, `points_earned`, `created_at`) VALUES
-(6, 69, 109, 1, 74, 0, 0.00, '2025-03-10 20:39:22');
 
 -- --------------------------------------------------------
 
@@ -294,16 +302,18 @@ CREATE TABLE `questions` (
 --
 
 INSERT INTO `questions` (`id`, `exam_id`, `question_text`, `question_type`, `points`, `order_num`, `question_order`, `correct_answer`, `question_image`, `code_language`) VALUES
-(79, 61, 'Q1', 'true_false', 10.00, 1, 0, 'true', NULL, NULL),
-(80, 61, 'q2', 'mcq', 10.00, 2, 0, NULL, NULL, NULL),
-(81, 62, 'SOAL ', 'open', 10.00, 1, 0, NULL, NULL, NULL),
-(82, 62, 'S7I7 WLA GHALT', 'true_false', 5.00, 2, 0, 'true', NULL, NULL),
-(83, 62, 'BZAAF', 'mcq', 5.00, 3, 0, NULL, NULL, NULL),
-(107, 76, 'OPEN', 'open', 5.00, 1, 0, NULL, NULL, NULL),
-(108, 76, 'TRUE OR FALSE', 'true_false', 3.00, 2, 0, 'true', NULL, NULL),
-(109, 76, 'MCQ', 'mcq', 3.00, 3, 0, NULL, NULL, NULL),
-(110, 77, 'Q1', 'true_false', 4.00, 1, 0, 'true', NULL, NULL),
-(111, 77, 'Q2', 'open', 6.00, 2, 0, NULL, NULL, NULL);
+(112, 78, 'Q1', 'open', 5.00, 1, 0, NULL, NULL, NULL),
+(113, 78, 'TRUE OR FALSE ', 'true_false', 3.00, 2, 0, 'true', NULL, NULL),
+(114, 78, 'MCQ', 'mcq', 1.50, 3, 0, NULL, NULL, NULL),
+(115, 79, 'Q1', 'true_false', 6.00, 1, 0, 'true', NULL, NULL),
+(116, 79, 'Q2', 'open', 4.00, 2, 0, NULL, NULL, NULL),
+(117, 79, 'Q3', 'mcq', 9.00, 3, 0, NULL, '67d0b10b2ce08.jpg', NULL),
+(118, 80, 'Q1', 'mcq', 1.00, 1, 0, NULL, NULL, NULL),
+(119, 80, 'Q2', 'true_false', 2.00, 2, 0, 'true', NULL, NULL),
+(120, 80, 'OPEN', 'open', 6.00, 3, 0, NULL, NULL, NULL),
+(121, 81, 'q1', 'true_false', 2.00, 1, 0, 'true', NULL, NULL),
+(122, 81, 'Q2', 'open', 2.00, 2, 0, NULL, NULL, NULL),
+(123, 81, 'Q3', 'mcq', 5.50, 3, 0, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -387,8 +397,15 @@ CREATE TABLE `student_answers` (
 --
 
 INSERT INTO `student_answers` (`id`, `attempt_id`, `question_id`, `student_id`, `answer_type`, `answer_text`, `selected_option_id`, `is_correct`, `points_earned`, `manual_grade`, `teacher_comment`, `graded_by`, `graded_at`, `created_at`, `updated_at`) VALUES
-(33, 69, 107, 1, 'open', 'Open answerrr', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-03-10 20:39:22', '2025-03-10 20:39:22'),
-(34, 70, 111, 1, 'open', 'qqqqq', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-03-10 23:41:20', '2025-03-10 23:41:20');
+(35, 71, 113, 1, 'true_false', 'true', NULL, 1, 3.00, NULL, NULL, NULL, NULL, '2025-03-11 19:08:33', '2025-03-11 19:08:33'),
+(36, 71, 114, 1, 'mcq', NULL, 76, 1, 1.50, NULL, NULL, NULL, NULL, '2025-03-11 19:08:33', '2025-03-11 19:08:33'),
+(37, 71, 112, 1, 'open', 'Q1 ANSWER', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-03-11 19:08:33', '2025-03-11 19:08:33'),
+(38, 72, 115, 3, 'true_false', 'true', NULL, 1, 6.00, NULL, NULL, NULL, NULL, '2025-03-11 22:00:34', '2025-03-11 22:00:34'),
+(39, 72, 117, 3, 'mcq', NULL, 79, 0, 0.00, NULL, NULL, NULL, NULL, '2025-03-11 22:00:35', '2025-03-11 22:00:35'),
+(40, 72, 116, 3, 'open', 'Q2 ANSWER GHITA', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-03-11 22:00:35', '2025-03-11 22:00:35'),
+(41, 74, 121, 1, 'true_false', 'true', NULL, 1, 2.00, NULL, NULL, NULL, NULL, '2025-03-13 00:05:32', '2025-03-13 00:05:32'),
+(42, 74, 123, 1, 'mcq', NULL, 85, 1, 5.50, NULL, NULL, NULL, NULL, '2025-03-13 00:05:32', '2025-03-13 00:05:32'),
+(43, 74, 122, 1, 'open', 'PSODILJHCDSKALMò', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2025-03-13 00:05:32', '2025-03-13 00:05:32');
 
 -- --------------------------------------------------------
 
@@ -404,16 +421,11 @@ CREATE TABLE `true_false_student_answers` (
   `answer_value` enum('true','false') NOT NULL,
   `is_correct` tinyint(1) DEFAULT NULL,
   `points_earned` decimal(5,2) DEFAULT NULL,
+  `teacher_comment` text DEFAULT NULL,
+  `graded_by` int(11) DEFAULT NULL,
+  `graded_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-
---
--- Déchargement des données de la table `true_false_student_answers`
---
-
-INSERT INTO `true_false_student_answers` (`id`, `attempt_id`, `question_id`, `student_id`, `answer_value`, `is_correct`, `points_earned`, `created_at`) VALUES
-(4, 69, 108, 1, 'true', 1, 3.00, '2025-03-10 20:39:22'),
-(5, 70, 110, 1, 'true', 1, 4.00, '2025-03-10 23:41:20');
 
 -- --------------------------------------------------------
 
@@ -441,13 +453,14 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `department`, `status`, `full_name`, `created_at`, `last_login`, `classroom_id`, `is_approved`) VALUES
-(1, 'achraf.gzl', '$2y$10$bfEmxE.1LXW.5y8uCTMXg.4a8Rohz3QxiBdUtsXqxf2SsV3M7c3ba', 'achraf@email.com', 'student', NULL, 'active', 'Achraf Ghazal', '2025-02-11 23:51:22', '2025-02-16 21:53:38', NULL, 0),
-(2, 'hayanisam', '$2y$10$MAU70g3lfjsXD.jPnuGytevL/FOpz8ufXLd8k5OR53OPwlei8ZsZS', 'isam@email.com', 'teacher', NULL, 'active', 'isam', '2025-02-11 23:53:50', '2025-02-16 21:55:57', NULL, 0),
-(3, 'ghitouuu___', '$2y$10$8nggNKcqMI0EwsOmvXcP.OBO6WtFsVXv40UMud87WdiMKKmL9qifa', 'ghita@example.com', 'student', NULL, 'active', 'Ghita Khaia', '2025-02-19 07:45:15', NULL, NULL, 0),
-(4, 'admin', '$2y$10$bfEmxE.1LXW.5y8uCTMXg.4a8Rohz3QxiBdUtsXqxf2SsV3M7c3ba', 'admin@quiztify.com', 'admin', NULL, 'active', 'System Administrator', '2025-02-19 15:50:00', NULL, NULL, 0),
+(1, 'achraf.gzl', '$2y$10$bfEmxE.1LXW.5y8uCTMXg.4a8Rohz3QxiBdUtsXqxf2SsV3M7c3ba', 'achraf@email.com', 'student', NULL, 'active', 'Achraf Ghazal', '2025-02-11 23:51:22', '2025-02-16 21:53:38', NULL, 1),
+(2, 'hayanisam', '$2y$10$MAU70g3lfjsXD.jPnuGytevL/FOpz8ufXLd8k5OR53OPwlei8ZsZS', 'isam@email.com', 'teacher', NULL, 'active', 'isam', '2025-02-11 23:53:50', '2025-02-16 21:55:57', NULL, 1),
+(3, 'ghitouuu___', '$2y$10$8nggNKcqMI0EwsOmvXcP.OBO6WtFsVXv40UMud87WdiMKKmL9qifa', 'ghita@example.com', 'student', NULL, 'active', 'Ghita Khaia', '2025-02-19 07:45:15', NULL, NULL, 1),
+(4, 'admin', '$2y$10$bfEmxE.1LXW.5y8uCTMXg.4a8Rohz3QxiBdUtsXqxf2SsV3M7c3ba', 'admin@quiztify.com', 'admin', NULL, 'active', 'System Administrator', '2025-02-19 15:50:00', NULL, NULL, 1),
 (5, 'tacheroune', '$2y$10$ayNHTZgKfqte8DaqEdxj0ucAV.1ZFsd5HPGtjU054wy04uMryqZq6', 'tach@email.com', 'student', 'DEVELOPEMENT digital', 'active', 'simo tacheroune', '2025-02-19 16:20:00', NULL, NULL, 0),
-(6, 'dino', '$2y$10$6z3eWxn1D8YkSffVsQyFl.ytbHa4vn1Mr.l6WfsSwshSAskr5ZLbe', 'dino@email.com', 'student', 'DEVELOPEMENT digital', 'active', 'Anas lbaz', '2025-02-19 16:54:37', NULL, NULL, 0),
-(7, 'bousfiha', '$2y$10$8Q63CJe3TWt.ENRx0iCq9.ZPLGwKCvJjecZt4wNFDkLlhwV/QuuG2', 'bousfiha@email.com', 'teacher', 'GE', 'active', 'bsfh', '2025-02-19 16:55:39', NULL, NULL, 0);
+(6, 'dino', '$2y$10$6z3eWxn1D8YkSffVsQyFl.ytbHa4vn1Mr.l6WfsSwshSAskr5ZLbe', 'dino@email.com', 'student', 'DEVELOPEMENT digital', 'active', 'Anas lbaz', '2025-02-19 16:54:37', NULL, NULL, 1),
+(7, 'bousfiha', '$2y$10$8Q63CJe3TWt.ENRx0iCq9.ZPLGwKCvJjecZt4wNFDkLlhwV/QuuG2', 'bousfiha@email.com', 'teacher', 'GE', 'active', 'bsfh', '2025-02-19 16:55:39', NULL, NULL, 0),
+(8, 'akram', '$2y$10$Pu/VDphUS7D/Uj8Oy/aN7u64gbH4nT5EG8ZUs1TkFAexpTqTjckue', 'akram@email.com', 'student', NULL, 'active', 'Akram Ghazal', '2025-03-13 00:08:58', NULL, NULL, 0);
 
 -- --------------------------------------------------------
 
@@ -583,6 +596,14 @@ ALTER TABLE `exam_classrooms`
   ADD KEY `classroom_id` (`classroom_id`);
 
 --
+-- Index pour la table `exam_feedback`
+--
+ALTER TABLE `exam_feedback`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `exam_id` (`exam_id`),
+  ADD KEY `student_id` (`student_id`);
+
+--
 -- Index pour la table `exam_final_grades`
 --
 ALTER TABLE `exam_final_grades`
@@ -622,7 +643,8 @@ ALTER TABLE `mcq_student_answers`
   ADD KEY `fk_mcq_attempt` (`attempt_id`),
   ADD KEY `fk_mcq_question` (`question_id`),
   ADD KEY `fk_mcq_student` (`student_id`),
-  ADD KEY `fk_mcq_option` (`selected_option_id`);
+  ADD KEY `fk_mcq_option` (`selected_option_id`),
+  ADD KEY `fk_mcq_graded_by` (`graded_by`);
 
 --
 -- Index pour la table `questions`
@@ -659,7 +681,8 @@ ALTER TABLE `true_false_student_answers`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_tf_attempt` (`attempt_id`),
   ADD KEY `fk_tf_question` (`question_id`),
-  ADD KEY `fk_tf_student` (`student_id`);
+  ADD KEY `fk_tf_student` (`student_id`),
+  ADD KEY `fk_tf_graded_by` (`graded_by`);
 
 --
 -- Index pour la table `users`
@@ -698,19 +721,19 @@ ALTER TABLE `classrooms`
 -- AUTO_INCREMENT pour la table `classroom_students`
 --
 ALTER TABLE `classroom_students`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT pour la table `exams`
 --
 ALTER TABLE `exams`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=78;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=82;
 
 --
 -- AUTO_INCREMENT pour la table `exam_attempts`
 --
 ALTER TABLE `exam_attempts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=71;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
 
 --
 -- AUTO_INCREMENT pour la table `exam_cheating_logs`
@@ -722,7 +745,13 @@ ALTER TABLE `exam_cheating_logs`
 -- AUTO_INCREMENT pour la table `exam_classrooms`
 --
 ALTER TABLE `exam_classrooms`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+
+--
+-- AUTO_INCREMENT pour la table `exam_feedback`
+--
+ALTER TABLE `exam_feedback`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `exam_final_grades`
@@ -746,7 +775,7 @@ ALTER TABLE `grades`
 -- AUTO_INCREMENT pour la table `mcq_options`
 --
 ALTER TABLE `mcq_options`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=76;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=86;
 
 --
 -- AUTO_INCREMENT pour la table `mcq_student_answers`
@@ -758,7 +787,7 @@ ALTER TABLE `mcq_student_answers`
 -- AUTO_INCREMENT pour la table `questions`
 --
 ALTER TABLE `questions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=124;
 
 --
 -- AUTO_INCREMENT pour la table `remember_tokens`
@@ -770,7 +799,7 @@ ALTER TABLE `remember_tokens`
 -- AUTO_INCREMENT pour la table `student_answers`
 --
 ALTER TABLE `student_answers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=44;
 
 --
 -- AUTO_INCREMENT pour la table `true_false_student_answers`
@@ -782,7 +811,7 @@ ALTER TABLE `true_false_student_answers`
 -- AUTO_INCREMENT pour la table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT pour la table `user_activity_logs`
@@ -843,6 +872,13 @@ ALTER TABLE `exam_classrooms`
   ADD CONSTRAINT `exam_classrooms_ibfk_2` FOREIGN KEY (`classroom_id`) REFERENCES `classrooms` (`id`) ON DELETE CASCADE;
 
 --
+-- Contraintes pour la table `exam_feedback`
+--
+ALTER TABLE `exam_feedback`
+  ADD CONSTRAINT `exam_feedback_ibfk_1` FOREIGN KEY (`exam_id`) REFERENCES `exams` (`id`),
+  ADD CONSTRAINT `exam_feedback_ibfk_2` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`);
+
+--
 -- Contraintes pour la table `exam_final_grades`
 --
 ALTER TABLE `exam_final_grades`
@@ -874,6 +910,7 @@ ALTER TABLE `mcq_options`
 --
 ALTER TABLE `mcq_student_answers`
   ADD CONSTRAINT `fk_mcq_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_mcq_graded_by` FOREIGN KEY (`graded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_mcq_option` FOREIGN KEY (`selected_option_id`) REFERENCES `mcq_options` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_mcq_question` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_mcq_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
@@ -909,6 +946,7 @@ ALTER TABLE `student_answers`
 --
 ALTER TABLE `true_false_student_answers`
   ADD CONSTRAINT `fk_tf_attempt` FOREIGN KEY (`attempt_id`) REFERENCES `exam_attempts` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_tf_graded_by` FOREIGN KEY (`graded_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
   ADD CONSTRAINT `fk_tf_question` FOREIGN KEY (`question_id`) REFERENCES `questions` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_tf_student` FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 

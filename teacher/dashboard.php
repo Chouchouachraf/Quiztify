@@ -266,6 +266,13 @@ try {
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Added CSS for the image */
+        .dashboard-image {
+            max-width: 100px;
+            height: auto;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -274,6 +281,7 @@ try {
 
         <div class="dashboard-header">
             <h1>Welcome, <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Teacher'); ?>!</h1>
+            <img src="../pictures/prof1.png" alt="Exam Dashboard" class="dashboard-image">
         </div>
 
         <?php if ($flash = getFlashMessage()): ?>

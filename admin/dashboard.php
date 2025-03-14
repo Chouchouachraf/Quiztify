@@ -26,7 +26,7 @@ try {
     
     // Get recent users
     $recent_users = $conn->query("
-        SELECT id, username, email, role, full_name, created_at 
+        SELECT id, username, email, role, full_name, created_at
         FROM users 
         ORDER BY created_at DESC 
         LIMIT 5
@@ -350,12 +350,6 @@ table th, table td {
                 </a>
                 <a href="statistics.php" class="nav-link">
                     <i class="fas fa-chart-bar"></i> Statistics
-                </a>
-                <a href="approve_users.php" class="nav-link">
-    <i class="fas fa-check"></i> Approve Users
-</a>
-                <a href="settings.php" class="nav-link">
-                    <i class="fas fa-cog"></i> Settings
                 </a>
             </nav>
         </div>

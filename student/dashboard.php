@@ -132,6 +132,24 @@ try {
             border-radius: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
+        }
+
+        .welcome-section::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 100px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23e74c3c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5z'%3E%3C/path%3E%3Cpath d='M2 17l10 5 10-5M2 12l10 5 10-5M2 7l10 5 10-5M2 12l10 5 10-5'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.1;
+            filter: var(--background-color);
         }
 
         .exam-list, .recent-attempts {
@@ -342,7 +360,6 @@ try {
         .user-avatar {
             width: 35px;
             height: 35px;
-            background: var(--accent-color);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -410,8 +427,11 @@ try {
         
         <div class="content">
             <div class="welcome-section">
-                <h2>Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
-                <p>Here are your available exams:</p>
+                <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3Cpolyline points='16 18 20 18 20 12'%3E%3C/polyline%3E%3Cline x1='16' y1='18' x2='16' y2='22'%3E%3C/line%3E%3Cline x1='8' y1='22' x2='8' y2='18'%3E%3C/line%3E%3C/svg%3E" alt="Exam Document">
+                <div>
+                    <h2>Welcome, <?php echo htmlspecialchars($_SESSION['full_name']); ?>!</h2>
+                    <p>Here are your available exams:</p>
+                </div>
             </div>
 
             <?php if ($flash = getFlashMessage()): ?>
