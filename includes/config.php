@@ -10,8 +10,8 @@ ini_set('display_errors', 1);
 
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', '');  // Make sure this matches your database name
-define('DB_USER', '');           
+define('DB_NAME', 'quiztifydatabase');  // Make sure this matches your database name
+define('DB_USER', 'root');           
 define('DB_PASS', '');                
 
 // Site configuration

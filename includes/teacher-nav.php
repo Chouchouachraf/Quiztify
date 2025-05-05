@@ -211,6 +211,10 @@ $userName = $_SESSION['full_name'] ?? 'Teacher';
                 <i class="fas fa-chart-bar"></i>
                 Results
             </a>
+            <a href="cheating-reports.php" class="nav-link <?php echo $current_page === 'cheating-reports.php' ? 'active' : ''; ?>">
+                <i class="fas fa-exclamation-triangle"></i>
+                Cheating Reports
+            </a>
         </div>
 
         <div class="user-menu">

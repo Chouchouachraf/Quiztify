@@ -100,6 +100,22 @@ $finalGrade = [
     'overall_feedback' => $attempt['teacher_feedback']
 ];
 
+// Get cheating incidents for this attempt
+$stmt = $conn->prepare("
+    SELECT 
+        eal.*,
+        DATE_FORMAT(eal.created_at, '%Y-%m-%d %H:%i:%s') as formatted_time,
+        ecs.snapshot_path
+    FROM exam_attempt_logs eal
+    LEFT JOIN exam_cheating_snapshots ecs ON eal.attempt_id = ecs.attempt_id 
+        AND eal.created_at = ecs.created_at
+    WHERE eal.attempt_id = ? 
+    AND eal.event_type = 'cheating_attempt'
+    ORDER BY eal.created_at DESC
+");
+$stmt->execute([$attemptId]);
+$cheatingIncidents = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $conn->beginTransaction();
@@ -801,6 +817,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
         </form>
+
+        <!-- Add this after the student answers section -->
+        <div class="question-card" style="margin-top: 30px;">
+            <div class="question-header" style="background: var(--danger-color); display: flex; justify-content: space-between; align-items: center;">
+                <h5 style="margin: 0; font-size: 1.1em; font-weight: 600;">
+                    <i class='bx bx-error-circle' style="margin-right: 8px;"></i>
+                    Exam Integrity Report
+                </h5>
+                <span style="background: rgba(255, 255, 255, 0.2); padding: 3px 10px; border-radius: 15px; font-size: 0.9em;">
+                    <?php echo count($cheatingIncidents) > 0 ? count($cheatingIncidents) . ' Incidents' : 'No Incidents'; ?>
+                </span>
+            </div>
+            <div class="question-content">
+                <?php if (count($cheatingIncidents) > 0): ?>
+                    <div style="padding: 15px; background-color: #fff3cd; color: #856404; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba;">
+                        <strong>Notice:</strong> This attempt has suspicious activities that may indicate academic integrity violations.
+                    </div>
+                    
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                            <thead>
+                                <tr style="background-color: var(--light-color); border-bottom: 1px solid var(--border-color);">
+                                    <th style="padding: 12px 15px; text-align: left; font-weight: 600;">Time</th>
+                                    <th style="padding: 12px 15px; text-align: left; font-weight: 600;">Type</th>
+                                    <th style="padding: 12px 15px; text-align: left; font-weight: 600;">Details</th>
+                                    <th style="padding: 12px 15px; text-align: left; font-weight: 600;">Evidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($cheatingIncidents as $incident): ?>
+                                    <tr style="border-bottom: 1px solid var(--border-color);">
+                                        <td style="padding: 12px 15px;"><?php echo $incident['formatted_time']; ?></td>
+                                        <td style="padding: 12px 15px;">
+                                            <span style="display: inline-block; padding: 4px 8px; border-radius: 4px; background-color: #f8d7da; color: #721c24; font-size: 0.9em; font-weight: 500;">
+                                                <?php 
+                                                $type = $incident['details'];
+                                                if ($type === 'tab_switch') {
+                                                    echo 'Left Exam Tab';
+                                                } elseif ($type === 'right_click') {
+                                                    echo 'Right Click Attempt';
+                                                } elseif ($type === 'copy_paste' || $type === 'copy_text' || $type === 'paste_text' || $type === 'cut_text') {
+                                                    echo 'Copy/Paste Attempt';
+                                                } elseif ($type === 'navigation_attempt') {
+                                                    echo 'Navigation Attempt';
+                                                } elseif ($type === 'focus_loss') {
+                                                    echo 'Window Focus Loss';
+                                                } elseif ($type === 'keyboard_shortcut') {
+                                                    echo 'Keyboard Shortcut';
+                                                } elseif ($type === 'dev_tools') {
+                                                    echo 'Dev Tools Access';
+                                                } elseif ($type === 'window_resize') {
+                                                    echo 'Window Resize';
+                                                } elseif ($type === 'multiple_displays') {
+                                                    echo 'Multiple Displays';
+                                                } elseif ($type === 'fullscreen_enter' || $type === 'fullscreen_exit') {
+                                                    echo 'Fullscreen Toggle';
+                                                } else {
+                                                    echo htmlspecialchars($type);
+                                                }
+                                                ?>
+                                            </span>
+                                        </td>
+                                        <td style="padding: 12px 15px;"><?php echo htmlspecialchars($incident['details']); ?></td>
+                                        <td style="padding: 12px 15px;">
+                                            <?php if ($incident['snapshot_path']): ?>
+                                                <a href="../uploads/snapshots/<?php echo $incident['snapshot_path']; ?>" 
+                                                   target="_blank" 
+                                                   style="display: inline-block; padding: 5px 10px; background-color: var(--secondary-color); color: white; text-decoration: none; border-radius: 4px; font-size: 0.9em;">
+                                                    <i class='bx bx-camera' style="margin-right: 5px;"></i> View Snapshot
+                                                </a>
+                                            <?php else: ?>
+                                                <span style="color: var(--text-light);">No snapshot</span>
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div style="padding: 15px; background-color: #d4edda; color: #155724; border-radius: 8px; border: 1px solid #c3e6cb;">
+                        <i class='bx bx-check-circle' style="margin-right: 5px;"></i>
+                        No suspicious activities were detected during this exam attempt.
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
     <script>

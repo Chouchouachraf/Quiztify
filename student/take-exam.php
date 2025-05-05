@@ -518,23 +518,62 @@ try {
 
         .cheat-warning {
             position: fixed;
-            bottom: 20px;
+            top: -100px;
             left: 50%;
             transform: translateX(-50%);
-            background: var(--danger-color);
-            color: var(--card-background);
-            padding: 15px 30px;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            z-index: 999;
-            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transition: top 0.3s ease-in-out;
+        }
+        
+        .cheat-warning.show-warning {
+            top: 20px;
+        }
+        
+        .warning-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .warning-content i {
+            font-size: 24px;
+            margin-right: 10px;
         }
 
-        .show-warning {
-            opacity: 1;
-            display: block;
+        .webcam-notice {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #cce5ff;
+            color: #004085;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            transition: bottom 0.3s ease-in-out;
+        }
+        
+        .webcam-notice.show-notice {
+            bottom: 20px;
+        }
+        
+        .notice-content {
+            display: flex;
+            align-items: center;
+        }
+        
+        .notice-content i {
+            font-size: 24px;
+            margin-right: 10px;
         }
 
         .exam-info {
@@ -681,7 +720,21 @@ try {
     </div>
 
     <div class="cheat-warning" id="cheatWarning">
-        Cheating detected! Your actions have been logged and will be reviewed.
+        <div class="warning-content">
+            <i class="bx bx-error-circle"></i>
+            <div class="warning-text">
+                <strong>Warning:</strong> Suspicious activity detected! Your actions have been logged and will be reviewed.
+            </div>
+        </div>
+    </div>
+
+    <div class="webcam-notice" id="webcamNotice">
+        <div class="notice-content">
+            <i class="bx bx-camera"></i>
+            <div class="notice-text">
+                <strong>Security:</strong> Webcam snapshot captured as part of exam integrity verification.
+            </div>
+        </div>
     </div>
 
     <div class="clock-timer">
@@ -703,16 +756,23 @@ try {
 
     <script>
         // Function to log cheating attempts
-        function logCheating(type) {
-            fetch('log-cheating.php', {
+        function logCheating(type, details = '') {
+            const data = {
+                attempt_id: '<?php echo $_SESSION['current_attempt']; ?>',
+                exam_id: '<?php echo $examId; ?>',
+                type: type
+            };
+            
+            if (details) {
+                data.details = details;
+            }
+            
+            fetch('log-cheating-attempt.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    attempt_id: '<?php echo $_SESSION['current_attempt']; ?>',
-                    type: type
-                })
+                body: JSON.stringify(data)
             })
             .then(response => response.json())
             .then(data => {
@@ -722,44 +782,213 @@ try {
                     setTimeout(() => {
                         document.getElementById('cheatWarning').classList.remove('show-warning');
                     }, 5000);
+                    
+                    // Attempt to capture webcam image if available
+                    captureWebcamSnapshot();
                 } else {
                     console.error('Failed to log cheating:', data.message);
                 }
             })
             .catch(error => console.error('Error logging cheating:', error));
         }
+        
+        // Function to capture webcam snapshot for evidence
+        function captureWebcamSnapshot() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                console.log('Webcam not supported in this browser');
+                return;
+            }
+            
+            // Only try to capture webcam if permission was previously granted
+            navigator.permissions.query({name: 'camera'})
+            .then(permissionStatus => {
+                if (permissionStatus.state === 'granted') {
+                    navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(stream => {
+                        const video = document.createElement('video');
+                        const canvas = document.createElement('canvas');
+                        
+                        video.srcObject = stream;
+                        video.play();
+                        
+                        // Wait a moment to ensure the video is playing
+                        setTimeout(() => {
+                            // Set canvas dimensions to match video
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            
+                            // Draw current frame to canvas
+                            canvas.getContext('2d').drawImage(video, 0, 0);
+                            
+                            // Convert to base64 image data
+                            const imageData = canvas.toDataURL('image/jpeg');
+                            
+                            // Stop all video tracks to release the camera
+                            stream.getTracks().forEach(track => track.stop());
+                            
+                            // Log the image data
+                            logWebcamSnapshot(imageData);
+                            
+                            // Show webcam notice
+                            document.getElementById('webcamNotice').classList.add('show-notice');
+                            setTimeout(() => {
+                                document.getElementById('webcamNotice').classList.remove('show-notice');
+                            }, 3000);
+                        }, 500);
+                    })
+                    .catch(err => {
+                        console.error('Error accessing webcam:', err);
+                    });
+                }
+            });
+        }
+        
+        // Function to log the webcam snapshot
+        function logWebcamSnapshot(imageData) {
+            fetch('log-webcam-snapshot.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    attempt_id: '<?php echo $_SESSION['current_attempt']; ?>',
+                    exam_id: '<?php echo $examId; ?>',
+                    image_data: imageData
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log('Webcam snapshot logged');
+                } else {
+                    console.error('Failed to log webcam snapshot');
+                }
+            })
+            .catch(error => console.error('Error logging webcam snapshot:', error));
+        }
 
-        // Event listeners for detecting cheating
+        // Enhanced event listeners for detecting cheating
+        
+        // Monitor tab/window visibility
         document.addEventListener('visibilitychange', function() {
             if (document.visibilityState === 'hidden') {
-                logCheating('tab_switch');
+                logCheating('tab_switch', 'User left the exam tab');
             }
         });
-
+        
+        // Monitor browser focus
+        window.addEventListener('blur', function() {
+            logCheating('focus_loss', 'User switched to another window');
+        });
+        
+        // Prevent context menu
         document.addEventListener('contextmenu', function(e) {
             e.preventDefault();
-            logCheating('right_click');
+            logCheating('right_click', 'User attempted to use context menu');
             return false;
         });
-
+        
+        // Monitor keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey && (e.key === 'c' || e.key === 'v')) || e.key === 'PrintScreen') {
+            // Detect copy, paste, print screen, alt+tab
+            if ((e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'p')) || 
+                e.key === 'PrintScreen' || 
+                (e.altKey && e.key === 'Tab')) {
                 e.preventDefault();
-                logCheating('copy_paste');
+                logCheating('keyboard_shortcut', 'User attempted to use ' + 
+                    (e.ctrlKey ? 'Ctrl+' + e.key : 
+                     e.key === 'PrintScreen' ? 'PrintScreen' : 
+                     'Alt+Tab'));
+                return false;
+            }
+            
+            // Detect F12 (developer tools)
+            if (e.key === 'F12') {
+                e.preventDefault();
+                logCheating('dev_tools', 'User attempted to open developer tools');
                 return false;
             }
         });
-
+        
+        // Monitor window resize (could indicate moving to another screen)
+        let originalWidth = window.innerWidth;
+        let originalHeight = window.innerHeight;
+        
+        window.addEventListener('resize', function() {
+            const widthDiff = Math.abs(window.innerWidth - originalWidth);
+            const heightDiff = Math.abs(window.innerHeight - originalHeight);
+            
+            // If significant resizing occurred (might be moving to another display)
+            if (widthDiff > 200 || heightDiff > 200) {
+                logCheating('window_resize', `Window resized from ${originalWidth}x${originalHeight} to ${window.innerWidth}x${window.innerHeight}`);
+                
+                // Update original dimensions
+                originalWidth = window.innerWidth;
+                originalHeight = window.innerHeight;
+            }
+        });
+        
+        // Detect if using multiple displays
+        if (window.screen && window.screen.availWidth && window.screen.width) {
+            if (window.screen.availWidth !== window.screen.width) {
+                logCheating('multiple_displays', 'User appears to be using multiple displays');
+            }
+        }
+        
+        // Prevent navigation away from the page
         window.addEventListener('beforeunload', function(e) {
+            logCheating('navigation_attempt', 'User attempted to navigate away from exam');
             e.preventDefault();
             e.returnValue = '';
-            logCheating('navigation_attempt');
             return '';
         });
-
-        window.addEventListener('blur', function() {
-            logCheating('tab_switch');
+        
+        // Detect clipboard access
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+            logCheating('copy_text', 'User attempted to copy text');
+            return false;
         });
+        
+        document.addEventListener('paste', function(e) {
+            e.preventDefault();
+            logCheating('paste_text', 'User attempted to paste text');
+            return false;
+        });
+        
+        document.addEventListener('cut', function(e) {
+            e.preventDefault();
+            logCheating('cut_text', 'User attempted to cut text');
+            return false;
+        });
+        
+        // Fullscreen change detection (could indicate screen recording)
+        document.addEventListener('fullscreenchange', function() {
+            if (document.fullscreenElement) {
+                logCheating('fullscreen_enter', 'User entered fullscreen mode');
+            } else {
+                logCheating('fullscreen_exit', 'User exited fullscreen mode');
+            }
+        });
+        
+        // Request webcam permission at the start - this will make it easier to capture
+        // snapshots later when cheating is detected
+        function requestInitialWebcamPermission() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                .then(stream => {
+                    // Just to request permission, immediately stop the stream
+                    stream.getTracks().forEach(track => track.stop());
+                    console.log('Webcam permission granted');
+                })
+                .catch(err => {
+                    console.log('Webcam permission denied or not available');
+                });
+            }
+        }
+        
+        // Call this function when page loads
+        requestInitialWebcamPermission();
 
         // Timer logic
         let timeRemaining = <?php echo $exam['duration_minutes'] * 60; ?>; // Convert minutes to seconds
@@ -837,6 +1066,135 @@ try {
                 updateProgress();
             }
         }
+
+        // Force full screen when the exam starts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Request full screen mode
+            function enterFullScreen() {
+                const element = document.documentElement;
+                
+                if (element.requestFullscreen) {
+                    element.requestFullscreen();
+                } else if (element.mozRequestFullScreen) { // Firefox
+                    element.mozRequestFullScreen();
+                } else if (element.webkitRequestFullscreen) { // Chrome, Safari & Opera
+                    element.webkitRequestFullscreen();
+                } else if (element.msRequestFullscreen) { // IE/Edge
+                    element.msRequestFullscreen();
+                }
+            }
+            
+            // Try to enter full screen
+            enterFullScreen();
+            
+            // Also try when user clicks anywhere on the page
+            document.addEventListener('click', function() {
+                if (!document.fullscreenElement) {
+                    enterFullScreen();
+                }
+            }, { once: true });
+        });
+        
+        // Prevent inspection methods
+        
+        // Disable right-click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            logCheating('right_click', 'User attempted to use context menu');
+            return false;
+        });
+        
+        // Disable keyboard shortcuts including F12 (Developer Tools)
+        document.addEventListener('keydown', function(e) {
+            // F12 key (developer tools)
+            if (e.key === 'F12' || e.keyCode === 123) {
+                e.preventDefault();
+                logCheating('dev_tools', 'User attempted to open developer tools');
+                return false;
+            }
+            
+            // Ctrl+Shift+I (developer tools)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.keyCode === 73)) {
+                e.preventDefault();
+                logCheating('dev_tools', 'User attempted to open developer tools');
+                return false;
+            }
+            
+            // Ctrl+Shift+J (developer console)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j' || e.keyCode === 74)) {
+                e.preventDefault();
+                logCheating('dev_tools', 'User attempted to open developer console');
+                return false;
+            }
+            
+            // Ctrl+Shift+C (inspect element)
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c' || e.keyCode === 67)) {
+                e.preventDefault();
+                logCheating('dev_tools', 'User attempted to use inspect element');
+                return false;
+            }
+            
+            // Detect copy, paste, print screen, alt+tab
+            if ((e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'p')) || 
+                e.key === 'PrintScreen' || 
+                (e.altKey && e.key === 'Tab')) {
+                e.preventDefault();
+                logCheating('keyboard_shortcut', 'User attempted to use ' + 
+                    (e.ctrlKey ? 'Ctrl+' + e.key : 
+                     e.key === 'PrintScreen' ? 'PrintScreen' : 
+                     'Alt+Tab'));
+                return false;
+            }
+        });
+
+        // Detect if developer tools is opened via browser console status
+        function checkDevTools() {
+            const threshold = 160; // Size threshold to detect dev tools
+            const devtools = {
+                isOpen: false,
+                orientation: null
+            };
+            
+            // Check for width/height difference
+            const widthThreshold = window.outerWidth - window.innerWidth > threshold;
+            const heightThreshold = window.outerHeight - window.innerHeight > threshold;
+            
+            if (widthThreshold || heightThreshold) {
+                devtools.isOpen = true;
+                devtools.orientation = widthThreshold ? 'vertical' : 'horizontal';
+                
+                // Log the cheating attempt if not already logged
+                if (!window.devToolsLogged) {
+                    window.devToolsLogged = true;
+                    logCheating('dev_tools', 'Developer tools detected: ' + devtools.orientation);
+                }
+            } else {
+                window.devToolsLogged = false;
+            }
+        }
+
+        // Check periodically for developer tools
+        setInterval(checkDevTools, 1000);
+        
+        // Exit fullscreen detection
+        document.addEventListener('fullscreenchange', function() {
+            if (!document.fullscreenElement) {
+                logCheating('fullscreen_exit', 'User exited fullscreen mode');
+                
+                // Show a warning
+                alert('Please stay in full screen mode. This action has been logged.');
+                
+                // Try to enter fullscreen again
+                setTimeout(function() {
+                    if (!document.fullscreenElement) {
+                        const element = document.documentElement;
+                        if (element.requestFullscreen) {
+                            element.requestFullscreen();
+                        }
+                    }
+                }, 1000);
+            }
+        });
     </script>
 </body>
 </html>
